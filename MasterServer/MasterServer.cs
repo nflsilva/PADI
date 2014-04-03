@@ -9,10 +9,10 @@ using System.Runtime.Remoting.Channels.Tcp;
 
 namespace MasterServer
 {
-    static class MasterServer
+    public static class MasterServer
     {
 
-        private static string MASTER_SERVER_NAME = "";
+        private static string MASTER_SERVER_NAME = "tcp://localhost:8086/MasterService";
         private static int MASTER_PORT = 8086;
 
         private static TcpChannel channel;
@@ -23,17 +23,22 @@ namespace MasterServer
         [STAThread]
         static void Main()
         {
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MasterUI());
+            MasterUI masterUI = new MasterUI();
+            Application.Run(masterUI);
 
             channel = new TcpChannel(MASTER_PORT);
             ChannelServices.RegisterChannel(channel, true); 
 
-            RemotingConfiguration.RegisterWellKnownServiceType(
-                typeof(MasterServerService),
-                MASTER_SERVER_NAME,
-                WellKnownObjectMode.Singleton);
+            MasterServerService mss = new MasterServerService(masterUI);
+
+            RemotingServices.Marshal(mss,
+                "MasterService",
+                typeof(MasterServerService));
+
+
         }
     }
 }

@@ -9,15 +9,15 @@ namespace Shared
     public interface IMasterServer
     {
 
-        public PadInt CreatePadInt(int uid);
-        public PadInt AccessPadInt(int uid);
-        public bool TxBegin();
-        public bool TxCommit();
-        public bool TxAbort();
-        public bool Status();
-        public bool Fail();
-        public bool Freeze();
-        public bool Recover();
+        PadInt CreatePadiInt(int uid);
+        PadInt AccessPadiInt(int uid);
+        bool TxBegin();
+        bool TxCommit();
+        bool TxAbort();
+        bool Status();
+        bool Fail();
+        bool Freeze();
+        bool Recover();
 
     }
 }

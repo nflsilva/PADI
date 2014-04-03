@@ -3,21 +3,30 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Shared;
+using System.Windows.Forms;
 using System.Threading.Tasks;
 
 namespace MasterServer
 {
-    class MasterServerService : MarshalByRefObject, IMasterServer
+    public class MasterServerService : MarshalByRefObject, IMasterServer
     {
+
+        private Dictionary<int, string> servers = new Dictionary<int, string>();
+        private static MasterUI ui;
+
+        public MasterServerService(MasterUI nui)
+        {
+            ui = nui;
+        }
 
         #region pad int
 
-        public PadInt IMasterServer.CreatePadInt(int uid)
+        PadInt IMasterServer.CreatePadiInt(int uid)
         {
             return null;
         }
 
-        public PadInt IMasterServer.AcessPadInt(int uid)
+        PadInt IMasterServer.AccessPadiInt(int uid)
         {
             return null;
         }
@@ -25,17 +34,17 @@ namespace MasterServer
         #endregion
 
         #region transactions
-        public bool IMasterServer.TxBegin()
+        bool IMasterServer.TxBegin()
         {
             return false;
         }
 
-        public bool IMasterServer.TxCommit()
+        bool IMasterServer.TxCommit()
         {
             return false;
         }
 
-        public bool IMasterServer.TxAbort()
+        bool IMasterServer.TxAbort()
         {
             return false;
         }
@@ -43,22 +52,41 @@ namespace MasterServer
         #endregion
 
         #region nodes
+        bool IMasterServer.Status()
+        {
+            return false;
 
-        public bool IMasterServer.Fail()
+        }
+
+
+        bool IMasterServer.Fail()
         {
             return false;
         }
 
 
-        public bool IMasterServer.Freeze()
+        bool IMasterServer.Freeze()
         {
             return false;
         }
 
-        public bool IMasterServer.Recover()
+        bool IMasterServer.Recover()
         {
             return false;
         }
+
+        public bool Register(int nid, string local)
+        {
+            if (servers.ContainsKey(nid))
+            {
+                return false;
+            }
+            servers.Add(nid, local);
+            ui.Invoke(ui.cDelegate, "Registered");
+            return true;
+        }
+
+
         #endregion
 
     }

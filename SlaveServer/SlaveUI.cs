@@ -16,5 +16,10 @@ namespace SlaveServer
         {
             InitializeComponent();
         }
+
+        private void SlaveUI_Load(object sender, EventArgs e)
+        {
+
+        }
     }
 }

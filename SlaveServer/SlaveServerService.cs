@@ -12,12 +12,12 @@ namespace SlaveServer
 
         #region pad int
 
-        public PadInt ISlaveServer.CreatePadInt(int uid)
+        PadInt ISlaveServer.CreatePadInt(int uid)
         {
             return null;
         }
 
-        public PadInt ISlaveServer.AcessPadInt(int uid)
+        PadInt ISlaveServer.AccessPadInt(int uid)
         {
             return null;
         }
@@ -25,17 +25,17 @@ namespace SlaveServer
         #endregion
 
         #region transactions
-        public bool ISlaveServer.TxBegin()
+        bool ISlaveServer.TxBegin()
         {
             return false;
         }
 
-        public bool ISlaveServer.TxCommit()
+        bool ISlaveServer.TxCommit()
         {
             return false;
         }
 
-        public bool ISlaveServer.TxAbort()
+        bool ISlaveServer.TxAbort()
         {
             return false;
         }
@@ -44,23 +44,32 @@ namespace SlaveServer
 
         #region nodes
 
-        public bool ISlaveServer.Fail()
+        bool ISlaveServer.Status()
+        {
+            return false;
+        }
+
+        bool ISlaveServer.Fail()
         {
             return false;
         }
 
 
-        public bool ISlaveServer.Freeze()
+        bool ISlaveServer.Freeze()
         {
             return false;
         }
 
-        public bool ISlaveServer.Recover()
+        bool ISlaveServer.Recover()
         {
             return false;
+        }
+
+        void imAlive()
+        {
+            //TODO: User later on for replication
         }
         #endregion
-
 
 
     }
