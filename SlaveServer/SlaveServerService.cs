@@ -3,12 +3,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Shared;
+using MasterServer;
 using System.Threading.Tasks;
 
 namespace SlaveServer
 {
+
     class SlaveServerService : MarshalByRefObject, ISlaveServer
     {
+        private static SlaveUI ui;
+        private static MasterServerService master;
+        private Dictionary<int, PadInt> padiints;
+
+
+        public SlaveServerService(SlaveUI nui)
+        {
+            ui = nui;
+        }
 
         #region pad int
 
@@ -46,7 +57,7 @@ namespace SlaveServer
 
         bool ISlaveServer.Status()
         {
-            return false;
+            return true;
         }
 
         bool ISlaveServer.Fail()

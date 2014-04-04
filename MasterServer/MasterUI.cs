@@ -20,7 +20,7 @@ namespace MasterServer
         private static int MASTER_DEFAULT_PORT = 8086;
 
 
-        private bool running;
+        private bool isRunning;
         private static TcpChannel channel;
         private static MasterServerService mss;
   
@@ -33,7 +33,7 @@ namespace MasterServer
         {
             InitializeComponent();        
             cDelegate = new ChangeTextBox(AppendTextBoxMethod);
-            running = false;
+            isRunning = false;
             mainPanel.Text = INTRO_MSG;
             portBox.Text = MASTER_DEFAULT_PORT.ToString();
         }
@@ -55,11 +55,11 @@ namespace MasterServer
         }
         private void button1_Click(object sender, EventArgs e)
         {
-            if (running)
+            if (isRunning)
             {
                 if (CloseChannel())
                 {
-                    running = false;
+                    isRunning = false;
                     portBox.Enabled = true;
                     StartButton.Text = "Start";
                     AppendTextBoxMethod("Server stoped");
@@ -73,7 +73,7 @@ namespace MasterServer
             {
                 if (OpenChannel(Convert.ToInt32(portBox.Text)))
                 {
-                    running = true;
+                    isRunning = true;
                     portBox.Enabled = false;
                     StartButton.Text = "Stop";
                     AppendTextBoxMethod("Server is running on port: " + portBox.Text);

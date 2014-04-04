@@ -75,37 +75,25 @@ namespace MasterServer
             return false;
         }
 
-        public bool Register(int nid, string local)
+        bool IMasterServer.Register(int sid, string slocal)
         {
-            if (servers.ContainsKey(nid))
+            if (servers.ContainsKey(sid))
             {
                 return false;
             }
-            servers.Add(nid, local);
-            ui.Invoke(ui.cDelegate, "Registered server id: " + nid.ToString() + "located at: " + local);
-
+            servers.Add(sid, slocal);
+            ui.Invoke(ui.cDelegate, "Registered server id: " + sid.ToString() + " located at: " + slocal);
             return true;
         }
-
-        public void BroadCast()
+        bool IMasterServer.Unregister(int sid)
         {
-            foreach (KeyValuePair<int, string> entry in servers)
+            if (servers.Remove(sid))
             {
-                ISlaveServer server = (ISlaveServer)Activator.GetObject(
-                typeof(ISlaveServer),
-                entry.Value);
-                ui.Invoke(ui.cDelegate, entry.Value);
-                if (server.Status())
-                {
-                    ui.Invoke(ui.cDelegate, "Yes");
-                }
-                else
-                {
-                    ui.Invoke(ui.cDelegate, "No");
-                }
+                ui.Invoke(ui.cDelegate, "Removed server id: " + sid.ToString());
+                return true;
             }
+            return false;
         }
-
 
         #endregion
 

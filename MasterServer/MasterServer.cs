@@ -12,11 +12,6 @@ namespace MasterServer
 {
     public static class MasterServer
     {
-
-        private static string MASTER_SERVER_LOCAL = "tcp://localhost:8086/MasterService";
-        private static string MASTER_SERVER_NAME = "MasterService";
-        private static int MASTER_PORT = 8086;
-
         private static MasterUI masterUI;
         
         /// <summary>
