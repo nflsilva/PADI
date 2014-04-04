@@ -33,10 +33,13 @@
             // 
             // textBox2
             // 
+            this.textBox2.Enabled = false;
             this.textBox2.Location = new System.Drawing.Point(13, 13);
+            this.textBox2.Multiline = true;
             this.textBox2.Name = "textBox2";
-            this.textBox2.Size = new System.Drawing.Size(267, 20);
+            this.textBox2.Size = new System.Drawing.Size(267, 248);
             this.textBox2.TabIndex = 0;
+            this.textBox2.Text = "Hello, Im Master Server!";
             this.textBox2.TextChanged += new System.EventHandler(this.textBox2_TextChanged);
             // 
             // MasterUI

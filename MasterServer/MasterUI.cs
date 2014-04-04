@@ -18,14 +18,20 @@ namespace MasterServer
 
         public MasterUI()
         {
-            InitializeComponent();
-            cDelegate = new ChangeTextBox(ChangeTextBoxMethod);
+            InitializeComponent();        
+            cDelegate = new ChangeTextBox(AppendTextBoxMethod);
 
         }
 
-        public void ChangeTextBoxMethod(string text)
+        public void AppendTextBoxMethod(string text)
         {
-            this.textBox2.Text = text;
+            if (this.textBox2.Text.Length==0) {
+                this.textBox2.Text = text;
+            }
+            else {
+                this.textBox2.AppendText("\r\n" + text);
+            }
+         
         }
 
         private void MasterUI_Load(object sender, EventArgs e)

@@ -82,7 +82,7 @@ namespace MasterServer
                 return false;
             }
             servers.Add(nid, local);
-            ui.Invoke(ui.cDelegate, "Registered");
+            ui.Invoke(ui.cDelegate, "Registered server id: " + nid.ToString() + "located at: " + local);
             return true;
         }
 

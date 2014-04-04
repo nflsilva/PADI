@@ -12,7 +12,8 @@ namespace MasterServer
     public static class MasterServer
     {
 
-        private static string MASTER_SERVER_NAME = "tcp://localhost:8086/MasterService";
+        private static string MASTER_SERVER_LOCAL = "tcp://localhost:8086/MasterService";
+        private static string MASTER_SERVER_NAME = "MasterService";
         private static int MASTER_PORT = 8086;
 
         private static TcpChannel channel;
@@ -24,20 +25,22 @@ namespace MasterServer
         static void Main()
         {
 
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             MasterUI masterUI = new MasterUI();
-            Application.Run(masterUI);
+
 
             channel = new TcpChannel(MASTER_PORT);
-            ChannelServices.RegisterChannel(channel, true); 
+            ChannelServices.RegisterChannel(channel, true);
 
             MasterServerService mss = new MasterServerService(masterUI);
 
             RemotingServices.Marshal(mss,
-                "MasterService",
+                MASTER_SERVER_NAME,
                 typeof(MasterServerService));
 
+            Application.Run(masterUI);
 
         }
     }
