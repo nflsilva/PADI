@@ -35,6 +35,8 @@
             this.label2 = new System.Windows.Forms.Label();
             this.slavePortBox = new System.Windows.Forms.TextBox();
             this.masterPortBox = new System.Windows.Forms.TextBox();
+            this.serverIDBox = new System.Windows.Forms.TextBox();
+            this.label3 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // mainPanel
@@ -97,11 +99,29 @@
             this.masterPortBox.Size = new System.Drawing.Size(98, 20);
             this.masterPortBox.TabIndex = 6;
             // 
+            // serverIDBox
+            // 
+            this.serverIDBox.Location = new System.Drawing.Point(161, 5);
+            this.serverIDBox.Name = "serverIDBox";
+            this.serverIDBox.Size = new System.Drawing.Size(38, 20);
+            this.serverIDBox.TabIndex = 7;
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(100, 9);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(55, 13);
+            this.label3.TabIndex = 8;
+            this.label3.Text = "Server ID:";
+            // 
             // SlaveUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(465, 273);
+            this.Controls.Add(this.label3);
+            this.Controls.Add(this.serverIDBox);
             this.Controls.Add(this.masterPortBox);
             this.Controls.Add(this.slavePortBox);
             this.Controls.Add(this.label2);
@@ -126,5 +146,7 @@
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.TextBox slavePortBox;
         private System.Windows.Forms.TextBox masterPortBox;
+        private System.Windows.Forms.TextBox serverIDBox;
+        private System.Windows.Forms.Label label3;
     }
 }

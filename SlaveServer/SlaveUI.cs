@@ -17,7 +17,7 @@ namespace SlaveServer
     public partial class SlaveUI : Form
     {
 
-        private static int SLAVE_SERVER_ID = 23;
+        private static int SLAVE_SERVER_ID = 0;
         private static int SLAVE_DEFAULT_PORT = 8085;
         private static int MASTER_DEFAULT_PORT = 8086;
         private static string INTRO_MSG = "Hello, Im a Slave Server!";
@@ -43,6 +43,7 @@ namespace SlaveServer
             mainPanel.Text = INTRO_MSG;
             masterPortBox.Text = MASTER_DEFAULT_PORT.ToString();
             slavePortBox.Text = SLAVE_DEFAULT_PORT.ToString();
+            serverIDBox.Text = SLAVE_SERVER_ID.ToString();
         }
 
         public SlaveUI(IMasterServer master)
@@ -79,6 +80,7 @@ namespace SlaveServer
                     isRunning = false;
                     slavePortBox.Enabled = true;
                     masterPortBox.Enabled = true;
+                    serverIDBox.Enabled = true;
                     startButton.Text = "Start";
                     AppendTextBoxMethod("Server stoped");
                 }
@@ -94,6 +96,7 @@ namespace SlaveServer
                     isRunning = true;
                     slavePortBox.Enabled = false;
                     masterPortBox.Enabled = false;
+                    serverIDBox.Enabled = false;
                     startButton.Text = "Stop";
                 }
             }
@@ -105,13 +108,16 @@ namespace SlaveServer
             channel = new TcpChannel(port);
             ChannelServices.RegisterChannel(channel, true);
 
+            SLAVE_SERVER_ID = Convert.ToInt32(serverIDBox.Text);
+            SLAVE_SERVER_NAME = "server-" + SLAVE_SERVER_ID.ToString();
+
             sss = new SlaveServerService(this);
 
             RemotingServices.Marshal(sss,
                 SLAVE_SERVER_NAME,
                 typeof(SlaveServerService));
 
-            AppendTextBoxMethod("Server running on port: " + port.ToString());
+            AppendTextBoxMethod("Server id: " + SLAVE_SERVER_ID + " is running on port: " + port.ToString());
             return true;
 
         }
@@ -120,6 +126,7 @@ namespace SlaveServer
             master.Unregister(SLAVE_SERVER_ID);
             ChannelServices.UnregisterChannel(channel);
             RemotingServices.Disconnect(sss);
+            isRunning = false;
             return true;
         }
 
@@ -134,7 +141,8 @@ namespace SlaveServer
                 AppendTextBoxMethod("Registered on master :)");
                 return true;
             }
-                AppendTextBoxMethod("Couldn't register on master :(");
+            AppendTextBoxMethod("Couldn't register on master :(. The choosen id is already taken.");
+            CloseChannel();
             return false;
         }
 

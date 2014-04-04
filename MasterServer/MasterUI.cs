@@ -90,13 +90,14 @@ namespace MasterServer
             RemotingServices.Marshal(mss,
                 MASTER_SERVER_NAME,
                 typeof(MasterServerService));
-
+            isRunning = true;
             return true;
         }
         private bool CloseChannel()
         {
             ChannelServices.UnregisterChannel(channel);
             RemotingServices.Disconnect(mss);
+            isRunning = false;
             return true;
 
         }
