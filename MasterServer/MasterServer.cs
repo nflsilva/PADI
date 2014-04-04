@@ -6,6 +6,7 @@ using System.Windows.Forms;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
+using Shared;
 
 namespace MasterServer
 {
@@ -16,7 +17,7 @@ namespace MasterServer
         private static string MASTER_SERVER_NAME = "MasterService";
         private static int MASTER_PORT = 8086;
 
-        private static TcpChannel channel;
+        private static MasterUI masterUI;
         
         /// <summary>
         /// The main entry point for the application.
@@ -24,24 +25,10 @@ namespace MasterServer
         [STAThread]
         static void Main()
         {
-
-
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            MasterUI masterUI = new MasterUI();
-
-
-            channel = new TcpChannel(MASTER_PORT);
-            ChannelServices.RegisterChannel(channel, true);
-
-            MasterServerService mss = new MasterServerService(masterUI);
-
-            RemotingServices.Marshal(mss,
-                MASTER_SERVER_NAME,
-                typeof(MasterServerService));
-
+            masterUI = new MasterUI();
             Application.Run(masterUI);
-
         }
     }
 }

@@ -83,7 +83,27 @@ namespace MasterServer
             }
             servers.Add(nid, local);
             ui.Invoke(ui.cDelegate, "Registered server id: " + nid.ToString() + "located at: " + local);
+
             return true;
+        }
+
+        public void BroadCast()
+        {
+            foreach (KeyValuePair<int, string> entry in servers)
+            {
+                ISlaveServer server = (ISlaveServer)Activator.GetObject(
+                typeof(ISlaveServer),
+                entry.Value);
+                ui.Invoke(ui.cDelegate, entry.Value);
+                if (server.Status())
+                {
+                    ui.Invoke(ui.cDelegate, "Yes");
+                }
+                else
+                {
+                    ui.Invoke(ui.cDelegate, "No");
+                }
+            }
         }
 
 
