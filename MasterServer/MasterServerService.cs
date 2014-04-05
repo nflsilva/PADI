@@ -11,7 +11,7 @@ namespace MasterServer
     public class MasterServerService : MarshalByRefObject, IMasterServer
     {
 
-        private static int MAX_NUM_SERVERS = 2;
+        private static int MAX_NUM_SERVERS = 3;
         private Dictionary<int, string> servers = new Dictionary<int, string>();
         private Dictionary<int, PadiInt> padiInts = new Dictionary<int, PadiInt>();
         private static MasterUI ui;
@@ -23,7 +23,7 @@ namespace MasterServer
 
         #region pad int
 
-        PadiInt IMasterServer.CreatePadiInt(int uid, string clocal)
+        Response IMasterServer.CreatePadiInt(int uid)
         {
             int targetServerID = uid % MAX_NUM_SERVERS;
             if (targetServerID == ui.GetServerId())
@@ -31,35 +31,24 @@ namespace MasterServer
                 if (padiInts.ContainsKey(uid))
                 {
                     ui.Invoke(ui.cDelegate, "Create PadiInt>  PadiInt id: " + uid.ToString() + " already exists!");
-                    return null;
+                    return new Response(false, null, null);
                 }
                 else
                 {
                     PadiInt pint = new PadiInt(uid);
                     padiInts.Add(uid, pint);
                     ui.Invoke(ui.cDelegate, "Create PadiInt> PadiInt id: " + uid.ToString() + " was created!");
-                    return pint;
+                    return new Response(false, null, pint);
                 }
             }
             else
             {
                 ui.Invoke(ui.cDelegate, "Create PadiInt> PadiInt id: " + uid.ToString() + " isn't in this server.");
-                ISlaveServer slave = (ISlaveServer)Activator.GetObject(
-                typeof(IMasterServer),
-                servers[targetServerID]);
-
-                IClient client = (IClient)Activator.GetObject(
-                    typeof(IClient),
-                    clocal);
-
-                client.ChangeTargetServer(servers[targetServerID]);
-
-                slave.CreatePadInt(uid);
-                return null;
+                return new Response(true, servers[targetServerID], null);
             }
         }
 
-        PadiInt IMasterServer.AccessPadiInt(int uid, string clocal)
+        Response IMasterServer.AccessPadiInt(int uid)
         {
             int targetServerID = uid % MAX_NUM_SERVERS;
             if (targetServerID == ui.GetServerId())
@@ -67,25 +56,18 @@ namespace MasterServer
                 if (padiInts.ContainsKey(uid))
                 {
                     ui.Invoke(ui.cDelegate, "Access PadiInt> PadiInt id: " + uid.ToString() + " was requested.");
-                    return padiInts[uid];
+                    return new Response(false, null, padiInts[uid]);
                 }
                 else
                 {
                     ui.Invoke(ui.cDelegate, "Access PadiInt> PadiInt id: " + uid.ToString() + " was not found.");
-                    return null;
+                    return new Response(false, null, null);
                 }
             }
             else
             {
                 ui.Invoke(ui.cDelegate, "Access PadiInt> PadiInt id: " + uid.ToString() + " isn't in this server.");
-                /*
-                IClient client = (IClient)Activator.GetObject(
-                    typeof(IClient),
-                    clocal);
-
-                client.ChangeTargetServer(servers[targetServerID]);*/
-
-                return null;
+                return new Response(true, servers[targetServerID], null);
             }
         }
 

@@ -157,34 +157,47 @@ namespace SampleClientApp
 
         private void createButton_Click(object sender, EventArgs e)
         {
-            PadiInt pint;
+            Response resp;
+
             if (usingMaster)
             {
-                pint = master.CreatePadiInt(Convert.ToInt32(createIDBox.Text), APP_SERVER_LOCAL);
+                resp = master.CreatePadiInt(Convert.ToInt32(createIDBox.Text));
             }
             else
             {
-                pint = slave.CreatePadInt(Convert.ToInt32(createIDBox.Text));
+                resp = slave.CreatePadiInt(Convert.ToInt32(createIDBox.Text));
             }
 
-            if (pint != null)
+            if (!resp.IsChangeServer())
             {
-                AppendTextBoxMethod(valuesTextBox, pint.GetUid().ToString() + " : " + pint.Read().ToString());
-            }
-            else if(changeServer)
-            {
-                this.createButton_Click(sender, e);
+
+                PadiInt pint = resp.GetPadiInt();
+                if (pint == null)
+                {
+                    AppendTextBoxMethod("Create PadiInt> PadiInt id: " + createIDBox.Text + " already exists");
+                }
+                else
+                {
+                    AppendTextBoxMethod(valuesTextBox, pint.GetUid().ToString() + " : " + pint.Read().ToString());
+                } 
             }
             else
             {
-                AppendTextBoxMethod("Create PadiInt> PadiInt id: " + createIDBox.Text + " already exists");
+                usingMaster = false;
+                AppendTextBoxMethod("Create PadiInt> Changing Server");
+                SLAVE_SERVER_LOCAL = resp.GetLocal();
+                slave = (ISlaveServer)Activator.GetObject(
+                    typeof(ISlaveServer),
+                    SLAVE_SERVER_LOCAL); 
+                this.createButton_Click(sender, e);
             }
                 
         }
 
         private void accessButton_Click(object sender, EventArgs e)
         {
-            PadiInt pint = master.AccessPadiInt(Convert.ToInt32(accessIDBox.Text), APP_SERVER_LOCAL);
+            /*
+            PadiInt pint = master.AccessPadiInt(Convert.ToInt32(accessIDBox.Text));
 
             if (pint != null)
             {
@@ -193,16 +206,12 @@ namespace SampleClientApp
             else
             {
                 AppendTextBoxMethod("Create PadiInt> PadiInt id: " + createIDBox.Text + " doesn't exists");
-            }
+            }*/
         }
         private void ChangeServerMethod(string local)
         {
             AppendTextBoxMethod("Changed server");
             changeServer = true;
-            SLAVE_SERVER_LOCAL = local;
-            slave = (ISlaveServer)Activator.GetObject(
-                typeof(ISlaveServer),
-                SLAVE_SERVER_LOCAL); 
         }
 
     }

@@ -115,6 +115,8 @@ namespace SlaveServer
 
             SLAVE_SERVER_ID = Convert.ToInt32(serverIDBox.Text);
             SLAVE_SERVER_NAME = "server-" + SLAVE_SERVER_ID.ToString();
+            SLAVE_DEFAULT_PORT = port;
+            SLAVE_SERVER_LOCAL = "tcp://localhost:" + SLAVE_DEFAULT_PORT.ToString() + "/" + SLAVE_SERVER_NAME; 
 
             sss = new SlaveServerService(this);
 
