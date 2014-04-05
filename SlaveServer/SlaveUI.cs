@@ -17,7 +17,7 @@ namespace SlaveServer
     public partial class SlaveUI : Form
     {
 
-        private static int SLAVE_SERVER_ID = 0;
+        private static int SLAVE_SERVER_ID = 1;
         private static int SLAVE_DEFAULT_PORT = 8085;
         private static int MASTER_DEFAULT_PORT = 8086;
         private static string INTRO_MSG = "Hello, Im a Slave Server!";
@@ -56,6 +56,11 @@ namespace SlaveServer
         private void SlaveUI_Load(object sender, EventArgs e)
         {
 
+        }
+
+        public int GetServerId()
+        {
+            return SLAVE_SERVER_ID;
         }
 
         public void AppendTextBoxMethod(string text)

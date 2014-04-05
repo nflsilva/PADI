@@ -8,8 +8,8 @@ namespace Shared
 {
     public interface ISlaveServer
     {
-        PadInt CreatePadInt(int uid);
-        PadInt AccessPadInt(int uid);
+        PadiInt CreatePadInt(int uid);
+        PadiInt AccessPadInt(int uid);
         bool TxBegin();
         bool TxCommit();
         bool TxAbort();

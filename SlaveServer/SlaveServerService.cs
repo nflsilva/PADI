@@ -11,9 +11,11 @@ namespace SlaveServer
 
     class SlaveServerService : MarshalByRefObject, ISlaveServer
     {
+
+        private static int MAX_NUM_SERVERS = 2;
         private static SlaveUI ui;
         private static MasterServerService master;
-        private Dictionary<int, PadInt> padiints;
+        private Dictionary<int, PadiInt> padiInts = new Dictionary<int, PadiInt>();
 
 
         public SlaveServerService(SlaveUI nui)
@@ -23,14 +25,50 @@ namespace SlaveServer
 
         #region pad int
 
-        PadInt ISlaveServer.CreatePadInt(int uid)
+        PadiInt ISlaveServer.CreatePadInt(int uid)
         {
-            return null;
+            if ((uid % MAX_NUM_SERVERS) == ui.GetServerId())
+            {
+                if (padiInts.ContainsKey(uid))
+                {
+                    ui.Invoke(ui.cDelegate, "Create PadiInt>  PadiInt id: " + uid.ToString() + " already exists!");
+                    return null;
+                }
+                else
+                {
+                    PadiInt pint = new PadiInt(uid);
+                    padiInts.Add(uid, pint);
+                    ui.Invoke(ui.cDelegate, "Create PadiInt> PadiInt id: " + uid.ToString() + " was created!");
+                    return pint;
+                }
+            }
+            else
+            {
+                ui.Invoke(ui.cDelegate, "Create PadiInt> PadiInt id: " + uid.ToString() + " isn't in this server.");
+                return null;
+            }
         }
 
-        PadInt ISlaveServer.AccessPadInt(int uid)
+        PadiInt ISlaveServer.AccessPadInt(int uid)
         {
-            return null;
+            if ((uid % MAX_NUM_SERVERS) == ui.GetServerId())
+            {
+                if (padiInts.ContainsKey(uid))
+                {
+                    ui.Invoke(ui.cDelegate, "Access PadiInt> PadiInt id: " + uid.ToString() + " was requested.");
+                    return padiInts[uid];
+                }
+                else
+                {
+                    ui.Invoke(ui.cDelegate, "Access PadiInt> PadiInt id: " + uid.ToString() + " was not found.");
+                    return null;
+                }
+            }
+            else
+            {
+                ui.Invoke(ui.cDelegate, "Access PadiInt> PadiInt id: " + uid.ToString() + " isn't in this server.");
+                return null;
+            }
         }
 
         #endregion
@@ -74,11 +112,6 @@ namespace SlaveServer
         bool ISlaveServer.Recover()
         {
             return false;
-        }
-
-        void imAlive()
-        {
-            //TODO: User later on for replication
         }
         #endregion
 

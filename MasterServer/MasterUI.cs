@@ -15,6 +15,7 @@ namespace MasterServer
 {
     public partial class MasterUI : Form
     {
+        private static int MASTER_SERVER_ID = 0;
         private static string INTRO_MSG = "Hello, Im Master Server!";
         private static string MASTER_SERVER_NAME = "MasterService";
         private static int MASTER_DEFAULT_PORT = 8086;
@@ -36,6 +37,11 @@ namespace MasterServer
             isRunning = false;
             mainPanel.Text = INTRO_MSG;
             portBox.Text = MASTER_DEFAULT_PORT.ToString();
+        }
+
+        public int GetServerId()
+        {
+            return MASTER_SERVER_ID;
         }
 
         public void AppendTextBoxMethod(string text)

@@ -9,8 +9,8 @@ namespace Shared
     public interface IMasterServer
     {
 
-        PadInt CreatePadiInt(int uid);
-        PadInt AccessPadiInt(int uid);
+        PadiInt CreatePadiInt(int uid);
+        PadiInt AccessPadiInt(int uid);
         bool TxBegin();
         bool TxCommit();
         bool TxAbort();

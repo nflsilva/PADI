@@ -11,7 +11,9 @@ namespace MasterServer
     public class MasterServerService : MarshalByRefObject, IMasterServer
     {
 
+        private static int MAX_NUM_SERVERS = 2;
         private Dictionary<int, string> servers = new Dictionary<int, string>();
+        private Dictionary<int, PadiInt> padiInts = new Dictionary<int, PadiInt>();
         private static MasterUI ui;
 
         public MasterServerService(MasterUI nui)
@@ -21,14 +23,50 @@ namespace MasterServer
 
         #region pad int
 
-        PadInt IMasterServer.CreatePadiInt(int uid)
+        PadiInt IMasterServer.CreatePadiInt(int uid)
         {
-            return null;
+            if ((uid % MAX_NUM_SERVERS) == ui.GetServerId())
+            {
+                if (padiInts.ContainsKey(uid))
+                {
+                    ui.Invoke(ui.cDelegate, "Create PadiInt>  PadiInt id: " + uid.ToString() + " already exists!");
+                    return null;
+                }
+                else
+                {
+                    PadiInt pint = new PadiInt(uid);
+                    padiInts.Add(uid, pint);
+                    ui.Invoke(ui.cDelegate, "Create PadiInt> PadiInt id: " + uid.ToString() + " was created!");
+                    return pint;
+                }
+            }
+            else
+            {
+                ui.Invoke(ui.cDelegate, "Create PadiInt> PadiInt id: " + uid.ToString() + " isn't in this server.");
+                return null;
+            }
         }
 
-        PadInt IMasterServer.AccessPadiInt(int uid)
+        PadiInt IMasterServer.AccessPadiInt(int uid)
         {
-            return null;
+            if ((uid % MAX_NUM_SERVERS) == ui.GetServerId())
+            {
+                if (padiInts.ContainsKey(uid))
+                {
+                    ui.Invoke(ui.cDelegate, "Access PadiInt> PadiInt id: " + uid.ToString() + " was requested.");
+                    return padiInts[uid];
+                }
+                else
+                {
+                    ui.Invoke(ui.cDelegate, "Access PadiInt> PadiInt id: " + uid.ToString() + " was not found.");
+                    return null;
+                }
+            }
+            else
+            {
+                ui.Invoke(ui.cDelegate, "Access PadiInt> PadiInt id: " + uid.ToString() + " isn't in this server.");
+                return null;
+            }
         }
 
         #endregion
