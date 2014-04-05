@@ -5,8 +5,6 @@ VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "Shared\Shared.csproj", "{20C498B8-269F-42C5-8BC4-C4A76DB7FA77}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PADI-DSTM Lib", "Client\PADI-DSTM Lib.csproj", "{FCAB5728-A1FA-421D-B53A-252C7CD0ED3D}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MasterServer", "MasterServer\MasterServer.csproj", "{96952822-869F-4043-81B5-A89780F37B59}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlaveServer", "SlaveServer\SlaveServer.csproj", "{FAD718D7-D275-4156-AAFE-19BEE4119AA3}"
