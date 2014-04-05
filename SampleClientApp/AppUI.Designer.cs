@@ -121,6 +121,7 @@
             resources.ApplyResources(this.accessButton, "accessButton");
             this.accessButton.Name = "accessButton";
             this.accessButton.UseVisualStyleBackColor = true;
+            this.accessButton.Click += new System.EventHandler(this.accessButton_Click);
             // 
             // AppUI
             // 

@@ -3,17 +3,25 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.Runtime.Serialization;
 
 namespace Shared
 {
-    public class PadiInt
+    [Serializable]
+    public class PadiInt : MarshalByRefObject
     {
-        private static int uid;
+        private int uid;
         private int value;
 
 
         public PadiInt(int uid){
             uid = 0;
+        }
+
+        public int GetUid()
+        {
+            return this.uid;
         }
 
         public int Read()
@@ -25,6 +33,5 @@ namespace Shared
         {
             this.value = value;
         }
-
     }
 }

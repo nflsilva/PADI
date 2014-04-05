@@ -9,6 +9,9 @@ namespace Shared
     public interface IClient
     {
 
+        void ChangeTargetServer(string url);
+
+
 
     }
 }

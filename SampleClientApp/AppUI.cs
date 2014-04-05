@@ -111,6 +111,8 @@ namespace SampleClientApp
 
         private bool ConnectToMaster()
         {
+
+            MASTER_SERVER_LOCAL = "tcp://localhost:" + MASTER_DEFAULT_PORT.ToString() + "/MasterService";
             master = (IMasterServer)Activator.GetObject(
                 typeof(IMasterServer),
                 MASTER_SERVER_LOCAL);
@@ -131,11 +133,44 @@ namespace SampleClientApp
                 dialogTextBox.AppendText("\r\n" + text);
             }
         }
+        public void AppendTextBoxMethod(TextBox box, string text)
+        {
+            if (box.Text.Length == 0)
+            {
+                box.Text = text;
+            }
+            else
+            {
+                box.AppendText("\r\n" + text);
+            }
+        }
 
         private void createButton_Click(object sender, EventArgs e)
         {
-            //PadiInt pint = master.
+            PadiInt pint = master.CreatePadiInt(Convert.ToInt32(createIDBox.Text));
+            if (pint != null)
+            {
+                AppendTextBoxMethod(valuesTextBox, pint.GetUid().ToString() + " : " + pint.Read().ToString());
+            }
+            else
+            {
+                AppendTextBoxMethod("Create PadiInt> PadiInt id: " + createIDBox.Text + " already exists");
+            }
+                
+        }
 
+        private void accessButton_Click(object sender, EventArgs e)
+        {
+            PadiInt pint = master.AccessPadiInt(Convert.ToInt32(createIDBox.Text));
+
+            if (pint != null)
+            {
+                AppendTextBoxMethod(valuesTextBox, pint.GetUid().ToString() + " : " + pint.Read().ToString());
+            }
+            else
+            {
+                AppendTextBoxMethod("Create PadiInt> PadiInt id: " + createIDBox.Text + " doesn't exists");
+            }
         }
     }
 }
