@@ -196,8 +196,17 @@ namespace SampleClientApp
 
         private void accessButton_Click(object sender, EventArgs e)
         {
-            /*
-            PadiInt pint = master.AccessPadiInt(Convert.ToInt32(accessIDBox.Text));
+            Response resp;
+            if (usingMaster)
+            {
+                resp = master.AccessPadiInt(Convert.ToInt32(accessIDBox.Text));
+            }
+            else
+            {
+                resp = slave.AccessPadiInt(Convert.ToInt32(accessIDBox.Text));
+            }
+           
+            PadiInt pint = resp.GetPadiInt();
 
             if (pint != null)
             {
@@ -206,7 +215,8 @@ namespace SampleClientApp
             else
             {
                 AppendTextBoxMethod("Create PadiInt> PadiInt id: " + createIDBox.Text + " doesn't exists");
-            }*/
+            }
+
         }
         private void ChangeServerMethod(string local)
         {

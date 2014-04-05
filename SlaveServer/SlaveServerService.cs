@@ -67,29 +67,44 @@ namespace SlaveServer
                 return slave.CreatePadiInt(uid);
                 }
 
-                
             }
         }
 
         Response ISlaveServer.AccessPadiInt(int uid)
         {
-            if ((uid % MAX_NUM_SERVERS) == ui.GetServerId())
+            int targetServer = uid % MAX_NUM_SERVERS;
+            if (targetServer == ui.GetServerId())
             {
                 if (padiInts.ContainsKey(uid))
                 {
                     ui.Invoke(ui.cDelegate, "Access PadiInt> PadiInt id: " + uid.ToString() + " was requested.");
-                    return null;
+                    return new Response(false, null, padiInts[uid]);
                 }
                 else
                 {
                     ui.Invoke(ui.cDelegate, "Access PadiInt> PadiInt id: " + uid.ToString() + " was not found.");
-                    return null;
+                    return new Response(false, null, null);
                 }
             }
             else
             {
                 ui.Invoke(ui.cDelegate, "Access PadiInt> PadiInt id: " + uid.ToString() + " isn't in this server.");
-                return null;
+
+                //HACK, need to be changed using something else
+                if (targetServer == 0)
+                {
+                    IMasterServer master = (IMasterServer)Activator.GetObject(
+                        typeof(IMasterServer),
+                        servers[targetServer]);
+                    return master.AccessPadiInt(uid);
+                }
+                else
+                {
+                    ISlaveServer slave = (ISlaveServer)Activator.GetObject(
+                        typeof(ISlaveServer),
+                        servers[targetServer]);
+                    return slave.AccessPadiInt(uid);
+                }
             }
         }
 
