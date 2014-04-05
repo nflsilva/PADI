@@ -23,6 +23,7 @@ namespace SampleClientApp
         private static string INTRO_MSG = "Hello, welcome to PADI-DSTM!";
         private static string APP_SERVER_NAME = "ClientService";
         private static string MASTER_SERVER_LOCAL = "tcp://localhost:" + MASTER_DEFAULT_PORT.ToString() + "/MasterService";
+        private string SLAVE_SERVER_LOCAL;
         private static string APP_SERVER_LOCAL = "tcp://localhost:" + APP_DEFAULT_PORT.ToString() + "/" + APP_SERVER_NAME;
 
         private static TcpChannel channel;
@@ -32,13 +33,22 @@ namespace SampleClientApp
 
 
         private bool isRunning;
+        private bool changeServer;
+        private bool usingMaster;
+
         public delegate void ChangeTextBox(string text);
+        public delegate void ChangeServer(string local);
         public ChangeTextBox cDelegate;
+        public ChangeServer sDelegate;
 
         public AppUI()
         {
             InitializeComponent();
             isRunning = false;
+            changeServer = false;
+            usingMaster = true;
+            cDelegate = new ChangeTextBox(AppendTextBoxMethod);
+            sDelegate = new ChangeServer(ChangeServerMethod);
             dialogTextBox.Text = INTRO_MSG;
             clientPortBox.Text = APP_DEFAULT_PORT.ToString();
             masterPortBox.Text = MASTER_DEFAULT_PORT.ToString();
@@ -147,10 +157,23 @@ namespace SampleClientApp
 
         private void createButton_Click(object sender, EventArgs e)
         {
-            PadiInt pint = master.CreatePadiInt(Convert.ToInt32(createIDBox.Text));
+            PadiInt pint;
+            if (usingMaster)
+            {
+                pint = master.CreatePadiInt(Convert.ToInt32(createIDBox.Text), APP_SERVER_LOCAL);
+            }
+            else
+            {
+                pint = slave.CreatePadInt(Convert.ToInt32(createIDBox.Text));
+            }
+
             if (pint != null)
             {
                 AppendTextBoxMethod(valuesTextBox, pint.GetUid().ToString() + " : " + pint.Read().ToString());
+            }
+            else if(changeServer)
+            {
+                this.createButton_Click(sender, e);
             }
             else
             {
@@ -161,7 +184,7 @@ namespace SampleClientApp
 
         private void accessButton_Click(object sender, EventArgs e)
         {
-            PadiInt pint = master.AccessPadiInt(Convert.ToInt32(createIDBox.Text));
+            PadiInt pint = master.AccessPadiInt(Convert.ToInt32(accessIDBox.Text), APP_SERVER_LOCAL);
 
             if (pint != null)
             {
@@ -172,5 +195,15 @@ namespace SampleClientApp
                 AppendTextBoxMethod("Create PadiInt> PadiInt id: " + createIDBox.Text + " doesn't exists");
             }
         }
+        private void ChangeServerMethod(string local)
+        {
+            AppendTextBoxMethod("Changed server");
+            changeServer = true;
+            SLAVE_SERVER_LOCAL = local;
+            slave = (ISlaveServer)Activator.GetObject(
+                typeof(ISlaveServer),
+                SLAVE_SERVER_LOCAL); 
+        }
+
     }
 }

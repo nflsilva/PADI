@@ -23,7 +23,7 @@ namespace MasterServer
 
         #region pad int
 
-        PadiInt IMasterServer.CreatePadiInt(int uid)
+        PadiInt IMasterServer.CreatePadiInt(int uid, string clocal)
         {
             int targetServerID = uid % MAX_NUM_SERVERS;
             if (targetServerID == ui.GetServerId())
@@ -48,12 +48,18 @@ namespace MasterServer
                 typeof(IMasterServer),
                 servers[targetServerID]);
 
+                IClient client = (IClient)Activator.GetObject(
+                    typeof(IClient),
+                    clocal);
+
+                client.ChangeTargetServer(servers[targetServerID]);
+
                 slave.CreatePadInt(uid);
                 return null;
             }
         }
 
-        PadiInt IMasterServer.AccessPadiInt(int uid)
+        PadiInt IMasterServer.AccessPadiInt(int uid, string clocal)
         {
             int targetServerID = uid % MAX_NUM_SERVERS;
             if (targetServerID == ui.GetServerId())
@@ -72,11 +78,12 @@ namespace MasterServer
             else
             {
                 ui.Invoke(ui.cDelegate, "Access PadiInt> PadiInt id: " + uid.ToString() + " isn't in this server.");
-                ISlaveServer slave = (ISlaveServer)Activator.GetObject(
-                    typeof(IMasterServer),
-                    servers[targetServerID]);
+                /*
+                IClient client = (IClient)Activator.GetObject(
+                    typeof(IClient),
+                    clocal);
 
-                slave.AccessPadInt(uid);
+                client.ChangeTargetServer(servers[targetServerID]);*/
 
                 return null;
             }

@@ -9,14 +9,15 @@ using System.Runtime.Serialization;
 namespace Shared
 {
     [Serializable]
-    public class PadiInt : MarshalByRefObject
+    public class PadiInt
     {
         private int uid;
         private int value;
 
 
         public PadiInt(int uid){
-            uid = 0;
+            this.uid = uid;
+            value = 0;
         }
 
         public int GetUid()
@@ -33,5 +34,6 @@ namespace Shared
         {
             this.value = value;
         }
+
     }
 }
