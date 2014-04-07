@@ -13,15 +13,21 @@ namespace SlaveServer
 
         private static int MAX_NUM_SERVERS = 3;
         private static SlaveUI ui;
-        private static IMasterServer master;
-        private Dictionary<int, PadiInt> padiInts = new Dictionary<int, PadiInt>();
-        private Dictionary<int, string> servers = new Dictionary<int, string>();
+        private Dictionary<int, PadiInt> padiInts;
+        private Dictionary<int, string> servers;                //this will hold the servers locals;
+        private Dictionary<int, List<PadiInt>> transactions;    //this will hold the objects to be commited in this server in each transaction;
+        private Dictionary<int, List<string>> participants;     //this will hold the participants in each transacions;
 
 
         public SlaveServerService(SlaveUI nui)
         {
             ui = nui;
-            //HACK
+            padiInts = new Dictionary<int, PadiInt>();
+            servers = new Dictionary<int, string>();
+            transactions = new Dictionary<int, List<PadiInt>>();
+            participants = new Dictionary<int, List<string>>();
+
+            //DIRTY HACK
             servers.Add(0, "tcp://localhost:8086/MasterService");
             servers.Add(1, "tcp://localhost:8081/server-1");
             servers.Add(2, "tcp://localhost:8082/server-2");
@@ -29,8 +35,13 @@ namespace SlaveServer
 
         #region pad int
 
-        Response ISlaveServer.CreatePadiInt(int uid)
+        Response ISlaveServer.CreatePadiInt(int txNumber, int uid)
         {
+            if (!transactions.ContainsKey(txNumber))
+            {
+                transactions.Add(txNumber, new List<PadiInt>());
+            }
+
             int targetServer = uid % MAX_NUM_SERVERS;
             if (targetServer == ui.GetServerId())
             {
@@ -43,7 +54,7 @@ namespace SlaveServer
                 {
                     PadiInt pint = new PadiInt(uid);
                     padiInts.Add(uid, pint);
-                    ui.Invoke(ui.cDelegate, "Create PadiInt> PadiInt id: " + uid.ToString() + " was created!");
+                    ui.Invoke(ui.cDelegate, "Create PadiInt> PadiInt id: " + uid.ToString() + " was created on transaction " + txNumber + " !");
                     return new Response(false, null, pint);
                 }
             }
@@ -57,20 +68,20 @@ namespace SlaveServer
                 IMasterServer master = (IMasterServer)Activator.GetObject(
                     typeof(IMasterServer),
                     servers[targetServer]);
-                return master.CreatePadiInt(uid);
+                return master.CreatePadiInt(txNumber, uid);
                 }
                 else
                 {
                 ISlaveServer slave = (ISlaveServer)Activator.GetObject(
                     typeof(ISlaveServer),
-                    servers[targetServer]); 
-                return slave.CreatePadiInt(uid);
+                    servers[targetServer]);
+                return slave.CreatePadiInt(txNumber, uid);
                 }
 
             }
         }
 
-        Response ISlaveServer.AccessPadiInt(int uid)
+        Response ISlaveServer.AccessPadiInt(int txNumber, int uid)
         {
             int targetServer = uid % MAX_NUM_SERVERS;
             if (targetServer == ui.GetServerId())
@@ -96,32 +107,42 @@ namespace SlaveServer
                     IMasterServer master = (IMasterServer)Activator.GetObject(
                         typeof(IMasterServer),
                         servers[targetServer]);
-                    return master.AccessPadiInt(uid);
+                    return master.AccessPadiInt(txNumber, uid);
                 }
                 else
                 {
                     ISlaveServer slave = (ISlaveServer)Activator.GetObject(
                         typeof(ISlaveServer),
                         servers[targetServer]);
-                    return slave.AccessPadiInt(uid);
+                    return slave.AccessPadiInt(txNumber, uid);
                 }
             }
+        }
+
+        Response ISlaveServer.TryWrite(int txNumber, PadiInt padiInt)
+        {
+            return null;
         }
 
         #endregion
 
         #region transactions
-        bool ISlaveServer.TxBegin()
+        bool ISlaveServer.JoinTx(int txNumber)
+        {
+            return true;
+        }
+
+        int ISlaveServer.TxBegin()
+        {
+            return 0;
+        }
+
+        bool ISlaveServer.TxCommit(int txNumber)
         {
             return false;
         }
 
-        bool ISlaveServer.TxCommit()
-        {
-            return false;
-        }
-
-        bool ISlaveServer.TxAbort()
+        bool ISlaveServer.TxAbort(int txNumber)
         {
             return false;
         }

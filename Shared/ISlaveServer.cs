@@ -8,11 +8,13 @@ namespace Shared
 {
     public interface ISlaveServer
     {
-        Response CreatePadiInt(int uid);
-        Response AccessPadiInt(int uid);
-        bool TxBegin();
-        bool TxCommit();
-        bool TxAbort();
+        Response CreatePadiInt(int txNumber, int uid);
+        Response AccessPadiInt(int txNumber, int uid);
+        Response TryWrite(int txNumber, PadiInt padiInt);
+        int TxBegin();
+        bool TxCommit(int txNumber);
+        bool TxAbort(int txNumber);
+        bool JoinTx(int txNumber);
         bool Status();
         bool Fail();
         bool Freeze();

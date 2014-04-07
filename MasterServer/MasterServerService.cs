@@ -12,19 +12,28 @@ namespace MasterServer
     {
 
         private static int MAX_NUM_SERVERS = 3;
-        private Dictionary<int, string> servers = new Dictionary<int, string>();
-        private Dictionary<int, PadiInt> padiInts = new Dictionary<int, PadiInt>();
+        private Dictionary<int, string> servers;
+        private Dictionary<int, PadiInt> padiInts;
+        private Dictionary<int, List<PadiInt>> transactions;
         private static MasterUI ui;
 
         public MasterServerService(MasterUI nui)
         {
             ui = nui;
+            padiInts = new Dictionary<int, PadiInt>();
+            servers = new Dictionary<int, string>();
+            transactions = new Dictionary<int, List<PadiInt>>();
         }
 
         #region pad int
 
-        Response IMasterServer.CreatePadiInt(int uid)
+        Response IMasterServer.CreatePadiInt(int txNumber, int uid)
         {
+            if (!transactions.ContainsKey(txNumber))
+            {
+                transactions.Add(txNumber, new List<PadiInt>());
+            }
+
             int targetServerID = uid % MAX_NUM_SERVERS;
             if (targetServerID == ui.GetServerId())
             {
@@ -36,19 +45,25 @@ namespace MasterServer
                 else
                 {
                     PadiInt pint = new PadiInt(uid);
-                    padiInts.Add(uid, pint);
-                    ui.Invoke(ui.cDelegate, "Create PadiInt> PadiInt id: " + uid.ToString() + " was created!");
+                    transactions[txNumber].Add(pint);
+                    ui.Invoke(ui.cDelegate, "Create PadiInt> PadiInt id: " + uid.ToString() + " was created on transaction " + txNumber +" !");
                     return new Response(false, null, pint);
                 }
             }
             else
             {
                 ui.Invoke(ui.cDelegate, "Create PadiInt> PadiInt id: " + uid.ToString() + " isn't in this server.");
+                ISlaveServer server = (ISlaveServer)Activator.GetObject(
+                typeof(ISlaveServer),
+                servers[targetServerID]);
+                server.JoinTx(txNumber);
                 return new Response(true, servers[targetServerID], null);
             }
         }
 
-        Response IMasterServer.AccessPadiInt(int uid)
+        //This function corresponds to a read(); the txNumber will be here only for future use, in case of a change, but for an
+        //optimistic aprouch, this isn't used
+        Response IMasterServer.AccessPadiInt(int txNumber, int uid)
         {
             int targetServerID = uid % MAX_NUM_SERVERS;
             if (targetServerID == ui.GetServerId())
@@ -71,20 +86,25 @@ namespace MasterServer
             }
         }
 
+        Response IMasterServer.TryWrite(int txNumber, PadiInt padiInt)
+        {
+            return null;
+        }
+
         #endregion
 
         #region transactions
-        bool IMasterServer.TxBegin()
+        int IMasterServer.TxBegin()
+        {
+            return 0;
+        }
+
+        bool IMasterServer.TxCommit(int txNumber)
         {
             return false;
         }
 
-        bool IMasterServer.TxCommit()
-        {
-            return false;
-        }
-
-        bool IMasterServer.TxAbort()
+        bool IMasterServer.TxAbort(int txNumber)
         {
             return false;
         }

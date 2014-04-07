@@ -70,6 +70,8 @@ namespace SampleClientApp
                     createButton.Enabled = false;
                     accessIDBox.Enabled = false;
                     createIDBox.Enabled = false;
+                    wIDValue.Enabled = false;
+                    wID.Enabled = false;
                     connectButton.Text = "Connect";
                     AppendTextBoxMethod("You are disconnected from DSTM.");
                 }
@@ -89,6 +91,8 @@ namespace SampleClientApp
                     createButton.Enabled = true;
                     accessIDBox.Enabled = true;
                     createIDBox.Enabled = true;
+                    wIDValue.Enabled = true;
+                    wID.Enabled = true;
                     connectButton.Text = "Disconnect";
                 }
             }
@@ -163,11 +167,11 @@ namespace SampleClientApp
 
             if (usingMaster)
             {
-                resp = master.CreatePadiInt(Convert.ToInt32(createIDBox.Text));
+                resp = master.CreatePadiInt(0, Convert.ToInt32(createIDBox.Text));
             }
             else
             {
-                resp = slave.CreatePadiInt(Convert.ToInt32(createIDBox.Text));
+                resp = slave.CreatePadiInt(0, Convert.ToInt32(createIDBox.Text));
             }
 
             if (!resp.IsChangeServer())
@@ -202,11 +206,11 @@ namespace SampleClientApp
             Response resp;
             if (usingMaster)
             {
-                resp = master.AccessPadiInt(Convert.ToInt32(accessIDBox.Text));
+                resp = master.AccessPadiInt(0, Convert.ToInt32(accessIDBox.Text));
             }
             else
             {
-                resp = slave.AccessPadiInt(Convert.ToInt32(accessIDBox.Text));
+                resp = slave.AccessPadiInt(0, Convert.ToInt32(accessIDBox.Text));
             }
            
             PadiInt pint = resp.GetPadiInt();
