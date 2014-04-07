@@ -136,7 +136,6 @@ namespace SlaveServer
             isRunning = false;
             return true;
         }
-
         private bool RegisterOnMaster()
         {
             master = (IMasterServer)Activator.GetObject(

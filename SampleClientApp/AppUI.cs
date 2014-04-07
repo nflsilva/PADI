@@ -30,6 +30,7 @@ namespace SampleClientApp
         private ISlaveServer slave;
         private IMasterServer master;
         private AppService appService;
+        private Dictionary<int, PadiInt> cache;
 
 
         private bool isRunning;
@@ -49,6 +50,7 @@ namespace SampleClientApp
             usingMaster = true;
             cDelegate = new ChangeTextBox(AppendTextBoxMethod);
             sDelegate = new ChangeServer(ChangeServerMethod);
+            cache = new Dictionary<int, PadiInt>();
             dialogTextBox.Text = INTRO_MSG;
             clientPortBox.Text = APP_DEFAULT_PORT.ToString();
             masterPortBox.Text = MASTER_DEFAULT_PORT.ToString();
@@ -178,7 +180,8 @@ namespace SampleClientApp
                 }
                 else
                 {
-                    AppendTextBoxMethod(valuesTextBox, pint.GetUid().ToString() + " : " + pint.Read().ToString());
+                    cache.Add(pint.GetUid(), pint);
+                    UpdatePadIntPanel();
                 } 
             }
             else
@@ -210,7 +213,14 @@ namespace SampleClientApp
 
             if (pint != null)
             {
-                AppendTextBoxMethod(valuesTextBox, pint.GetUid().ToString() + " : " + pint.Read().ToString());
+                if (cache.ContainsKey(pint.GetUid()))
+                {
+                    cache.Remove(pint.GetUid());
+                }
+                cache.Add(pint.GetUid(), pint);
+                UpdatePadIntPanel();
+
+               
             }
             else
             {
@@ -222,6 +232,29 @@ namespace SampleClientApp
         {
             AppendTextBoxMethod("Changed server");
             changeServer = true;
+        }
+
+        private void UpdatePadIntPanel()
+        {
+            valuesTextBox.Text = "";
+            foreach (KeyValuePair<int, PadiInt> entry in cache)
+            {
+                PadiInt pint = entry.Value;
+                AppendTextBoxMethod(valuesTextBox, pint.GetUid().ToString() + " : " + pint.Read().ToString());
+            }
+
+        }
+
+        private void writeButton_Click(object sender, EventArgs e)
+        {
+            PadiInt pint = cache[Convert.ToInt32(wID.Text)];
+            pint.Write(Convert.ToInt32(wValueBox.Text));
+            UpdatePadIntPanel();
+        }
+
+        private void commitButton_Click(object sender, EventArgs e)
+        {
+
         }
 
     }

@@ -43,6 +43,12 @@
             this.accessIDBox = new System.Windows.Forms.TextBox();
             this.createIDBox = new System.Windows.Forms.TextBox();
             this.accessButton = new System.Windows.Forms.Button();
+            this.wIDValue = new System.Windows.Forms.Label();
+            this.wID = new System.Windows.Forms.TextBox();
+            this.wValueLabel = new System.Windows.Forms.Label();
+            this.writeButton = new System.Windows.Forms.Button();
+            this.commitButton = new System.Windows.Forms.Button();
+            this.wValueBox = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
             // label1
@@ -123,10 +129,50 @@
             this.accessButton.UseVisualStyleBackColor = true;
             this.accessButton.Click += new System.EventHandler(this.accessButton_Click);
             // 
+            // wIDValue
+            // 
+            resources.ApplyResources(this.wIDValue, "wIDValue");
+            this.wIDValue.Name = "wIDValue";
+            // 
+            // wID
+            // 
+            resources.ApplyResources(this.wID, "wID");
+            this.wID.Name = "wID";
+            // 
+            // wValueLabel
+            // 
+            resources.ApplyResources(this.wValueLabel, "wValueLabel");
+            this.wValueLabel.Name = "wValueLabel";
+            // 
+            // writeButton
+            // 
+            resources.ApplyResources(this.writeButton, "writeButton");
+            this.writeButton.Name = "writeButton";
+            this.writeButton.UseVisualStyleBackColor = true;
+            this.writeButton.Click += new System.EventHandler(this.writeButton_Click);
+            // 
+            // commitButton
+            // 
+            resources.ApplyResources(this.commitButton, "commitButton");
+            this.commitButton.Name = "commitButton";
+            this.commitButton.UseVisualStyleBackColor = true;
+            this.commitButton.Click += new System.EventHandler(this.commitButton_Click);
+            // 
+            // wValueBox
+            // 
+            resources.ApplyResources(this.wValueBox, "wValueBox");
+            this.wValueBox.Name = "wValueBox";
+            // 
             // AppUI
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.wValueBox);
+            this.Controls.Add(this.commitButton);
+            this.Controls.Add(this.writeButton);
+            this.Controls.Add(this.wValueLabel);
+            this.Controls.Add(this.wID);
+            this.Controls.Add(this.wIDValue);
             this.Controls.Add(this.accessButton);
             this.Controls.Add(this.createIDBox);
             this.Controls.Add(this.accessIDBox);
@@ -163,6 +209,12 @@
         private System.Windows.Forms.TextBox accessIDBox;
         private System.Windows.Forms.TextBox createIDBox;
         private System.Windows.Forms.Button accessButton;
+        private System.Windows.Forms.Label wIDValue;
+        private System.Windows.Forms.TextBox wID;
+        private System.Windows.Forms.Label wValueLabel;
+        private System.Windows.Forms.Button writeButton;
+        private System.Windows.Forms.Button commitButton;
+        private System.Windows.Forms.TextBox wValueBox;
     }
 }
 

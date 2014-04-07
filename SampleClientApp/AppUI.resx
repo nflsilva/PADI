@@ -144,7 +144,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label1.ZOrder" xml:space="preserve">
-    <value>13</value>
+    <value>19</value>
   </data>
   <data name="label2.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -171,7 +171,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label2.ZOrder" xml:space="preserve">
-    <value>12</value>
+    <value>18</value>
   </data>
   <data name="label3.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -198,7 +198,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label3.ZOrder" xml:space="preserve">
-    <value>11</value>
+    <value>17</value>
   </data>
   <data name="clientPortBox.Location" type="System.Drawing.Point, System.Drawing">
     <value>88, 32</value>
@@ -219,7 +219,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;clientPortBox.ZOrder" xml:space="preserve">
-    <value>10</value>
+    <value>16</value>
   </data>
   <data name="masterPortBox.Location" type="System.Drawing.Point, System.Drawing">
     <value>223, 32</value>
@@ -240,7 +240,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;masterPortBox.ZOrder" xml:space="preserve">
-    <value>9</value>
+    <value>15</value>
   </data>
   <data name="connectButton.Location" type="System.Drawing.Point, System.Drawing">
     <value>282, 30</value>
@@ -264,13 +264,13 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;connectButton.ZOrder" xml:space="preserve">
-    <value>8</value>
+    <value>14</value>
   </data>
   <data name="createButton.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
   <data name="createButton.Location" type="System.Drawing.Point, System.Drawing">
-    <value>200, 220</value>
+    <value>200, 209</value>
   </data>
   <data name="createButton.Size" type="System.Drawing.Size, System.Drawing">
     <value>75, 23</value>
@@ -291,7 +291,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;createButton.ZOrder" xml:space="preserve">
-    <value>7</value>
+    <value>13</value>
   </data>
   <data name="dialogTextBox.Location" type="System.Drawing.Point, System.Drawing">
     <value>16, 62</value>
@@ -315,7 +315,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;dialogTextBox.ZOrder" xml:space="preserve">
-    <value>6</value>
+    <value>12</value>
   </data>
   <data name="valuesTextBox.Location" type="System.Drawing.Point, System.Drawing">
     <value>282, 62</value>
@@ -324,7 +324,7 @@
     <value>True</value>
   </data>
   <data name="valuesTextBox.Size" type="System.Drawing.Size, System.Drawing">
-    <value>75, 180</value>
+    <value>75, 170</value>
   </data>
   <data name="valuesTextBox.TabIndex" type="System.Int32, mscorlib">
     <value>8</value>
@@ -339,7 +339,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;valuesTextBox.ZOrder" xml:space="preserve">
-    <value>5</value>
+    <value>11</value>
   </data>
   <data name="label4.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -366,13 +366,13 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label4.ZOrder" xml:space="preserve">
-    <value>4</value>
+    <value>10</value>
   </data>
   <data name="label5.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
   <data name="label5.Location" type="System.Drawing.Point, System.Drawing">
-    <value>14, 225</value>
+    <value>18, 214</value>
   </data>
   <data name="label5.Size" type="System.Drawing.Size, System.Drawing">
     <value>55, 13</value>
@@ -393,7 +393,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label5.ZOrder" xml:space="preserve">
-    <value>3</value>
+    <value>9</value>
   </data>
   <data name="accessIDBox.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
@@ -417,13 +417,13 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;accessIDBox.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>8</value>
   </data>
   <data name="createIDBox.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
   <data name="createIDBox.Location" type="System.Drawing.Point, System.Drawing">
-    <value>79, 222</value>
+    <value>79, 211</value>
   </data>
   <data name="createIDBox.Size" type="System.Drawing.Size, System.Drawing">
     <value>115, 20</value>
@@ -441,7 +441,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;createIDBox.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>7</value>
   </data>
   <data name="accessButton.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
@@ -468,6 +468,157 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;accessButton.ZOrder" xml:space="preserve">
+    <value>6</value>
+  </data>
+  <data name="wIDValue.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="wIDValue.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="wIDValue.Location" type="System.Drawing.Point, System.Drawing">
+    <value>24, 240</value>
+  </data>
+  <data name="wIDValue.Size" type="System.Drawing.Size, System.Drawing">
+    <value>49, 13</value>
+  </data>
+  <data name="wIDValue.TabIndex" type="System.Int32, mscorlib">
+    <value>14</value>
+  </data>
+  <data name="wIDValue.Text" xml:space="preserve">
+    <value>Write ID:</value>
+  </data>
+  <data name="&gt;&gt;wIDValue.Name" xml:space="preserve">
+    <value>wIDValue</value>
+  </data>
+  <data name="&gt;&gt;wIDValue.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;wIDValue.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;wIDValue.ZOrder" xml:space="preserve">
+    <value>5</value>
+  </data>
+  <data name="wID.Location" type="System.Drawing.Point, System.Drawing">
+    <value>79, 237</value>
+  </data>
+  <data name="wID.Size" type="System.Drawing.Size, System.Drawing">
+    <value>115, 20</value>
+  </data>
+  <data name="wID.TabIndex" type="System.Int32, mscorlib">
+    <value>15</value>
+  </data>
+  <data name="&gt;&gt;wID.Name" xml:space="preserve">
+    <value>wID</value>
+  </data>
+  <data name="&gt;&gt;wID.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;wID.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;wID.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="wValueLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="wValueLabel.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="wValueLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>8, 266</value>
+  </data>
+  <data name="wValueLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>65, 13</value>
+  </data>
+  <data name="wValueLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>16</value>
+  </data>
+  <data name="wValueLabel.Text" xml:space="preserve">
+    <value>Write Value:</value>
+  </data>
+  <data name="&gt;&gt;wValueLabel.Name" xml:space="preserve">
+    <value>wValueLabel</value>
+  </data>
+  <data name="&gt;&gt;wValueLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;wValueLabel.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;wValueLabel.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="writeButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>200, 235</value>
+  </data>
+  <data name="writeButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>75, 23</value>
+  </data>
+  <data name="writeButton.TabIndex" type="System.Int32, mscorlib">
+    <value>18</value>
+  </data>
+  <data name="writeButton.Text" xml:space="preserve">
+    <value>Write</value>
+  </data>
+  <data name="&gt;&gt;writeButton.Name" xml:space="preserve">
+    <value>writeButton</value>
+  </data>
+  <data name="&gt;&gt;writeButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;writeButton.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;writeButton.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="commitButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>282, 235</value>
+  </data>
+  <data name="commitButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>75, 23</value>
+  </data>
+  <data name="commitButton.TabIndex" type="System.Int32, mscorlib">
+    <value>19</value>
+  </data>
+  <data name="commitButton.Text" xml:space="preserve">
+    <value>Commit</value>
+  </data>
+  <data name="&gt;&gt;commitButton.Name" xml:space="preserve">
+    <value>commitButton</value>
+  </data>
+  <data name="&gt;&gt;commitButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;commitButton.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;commitButton.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="wValueBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>79, 263</value>
+  </data>
+  <data name="wValueBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>115, 20</value>
+  </data>
+  <data name="wValueBox.TabIndex" type="System.Int32, mscorlib">
+    <value>20</value>
+  </data>
+  <data name="&gt;&gt;wValueBox.Name" xml:space="preserve">
+    <value>wValueBox</value>
+  </data>
+  <data name="&gt;&gt;wValueBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;wValueBox.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;wValueBox.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
@@ -477,7 +628,7 @@
     <value>6, 13</value>
   </data>
   <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
-    <value>366, 250</value>
+    <value>364, 286</value>
   </data>
   <data name="$this.Text" xml:space="preserve">
     <value>PADI-DSTM Client UI</value>
