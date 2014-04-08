@@ -45,7 +45,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AppService.cs" />
     <Compile Include="AppUI.cs">
       <SubType>Form</SubType>
     </Compile>

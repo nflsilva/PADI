@@ -39,9 +39,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="IClient.cs" />
     <Compile Include="IMasterServer.cs" />
-    <Compile Include="ISlaveServer.cs" />
+    <Compile Include="IServer.cs" />
     <Compile Include="PadiInt.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Response.cs" />

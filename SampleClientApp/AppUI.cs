@@ -27,14 +27,11 @@ namespace SampleClientApp
         private static string APP_SERVER_LOCAL = "tcp://localhost:" + APP_DEFAULT_PORT.ToString() + "/" + APP_SERVER_NAME;
 
         private static TcpChannel channel;
-        private ISlaveServer slave;
-        private IMasterServer master;
-        private AppService appService;
+        private IServer server;
         private Dictionary<int, PadiInt> cache;
 
 
         private bool isRunning;
-        private bool changeServer;
         private bool usingMaster;
 
         public delegate void ChangeTextBox(string text);
@@ -46,7 +43,6 @@ namespace SampleClientApp
         {
             InitializeComponent();
             isRunning = false;
-            changeServer = false;
             usingMaster = true;
             cDelegate = new ChangeTextBox(AppendTextBoxMethod);
             sDelegate = new ChangeServer(ChangeServerMethod);
@@ -104,15 +100,10 @@ namespace SampleClientApp
         {
             channel = new TcpChannel(port);
             ChannelServices.RegisterChannel(channel, true);
-            appService = new AppService(this);
-
-            RemotingServices.Marshal(appService,
-                APP_SERVER_NAME,
-                typeof(AppService));
 
             AppendTextBoxMethod("Client is running on port: " + port.ToString());
 
-            ConnectToMaster();
+            ConnectToSystem();
 
             return true;
 
@@ -120,20 +111,38 @@ namespace SampleClientApp
         private bool CloseChannel()
         {
             ChannelServices.UnregisterChannel(channel);
-            RemotingServices.Disconnect(appService);
             isRunning = false;
             return true;
         }
 
-        private bool ConnectToMaster()
+        private bool ConnectToSystem()
         {
 
             MASTER_SERVER_LOCAL = "tcp://localhost:" + MASTER_DEFAULT_PORT.ToString() + "/MasterService";
-            master = (IMasterServer)Activator.GetObject(
+            IMasterServer master = (IMasterServer)Activator.GetObject(
                 typeof(IMasterServer),
                 MASTER_SERVER_LOCAL);
 
+
+            server = (IMasterServer)Activator.GetObject(
+                typeof(IMasterServer),
+                master.GetAvailableServer());
+
             AppendTextBoxMethod("Connected to DSTM System");
+
+            return true;
+        }
+
+        private bool CommitChanges(int txNumber)
+        {
+            Response tryResp;
+            bool comResp;
+            foreach (PadiInt pint in cache.Values)
+            {
+                tryResp = server.TryWrite(txNumber, pint);
+            }
+
+            comResp = server.TxCommit(txNumber);
 
             return true;
         }
@@ -161,18 +170,11 @@ namespace SampleClientApp
             }
         }
 
+        //created the object on local Cache
         private void createButton_Click(object sender, EventArgs e)
         {
             Response resp;
-
-            if (usingMaster)
-            {
-                resp = master.CreatePadiInt(0, Convert.ToInt32(createIDBox.Text));
-            }
-            else
-            {
-                resp = slave.CreatePadiInt(0, Convert.ToInt32(createIDBox.Text));
-            }
+            resp = server.CreatePadiInt(0, Convert.ToInt32(createIDBox.Text));
 
             if (!resp.IsChangeServer())
             {
@@ -193,28 +195,23 @@ namespace SampleClientApp
                 usingMaster = false;
                 AppendTextBoxMethod("Create PadiInt> Changing Server");
                 SLAVE_SERVER_LOCAL = resp.GetLocal();
-                slave = (ISlaveServer)Activator.GetObject(
-                    typeof(ISlaveServer),
+                server = (IServer)Activator.GetObject(
+                    typeof(IServer),
                     SLAVE_SERVER_LOCAL); 
                 this.createButton_Click(sender, e);
             }
-                
+
         }
 
+
+        //access brings the object to Cache
         private void accessButton_Click(object sender, EventArgs e)
         {
             Response resp;
-            if (usingMaster)
-            {
-                resp = master.AccessPadiInt(0, Convert.ToInt32(accessIDBox.Text));
-            }
-            else
-            {
-                resp = slave.AccessPadiInt(0, Convert.ToInt32(accessIDBox.Text));
-            }
+            resp = server.AccessPadiInt(0, Convert.ToInt32(accessIDBox.Text));
            
-            PadiInt pint = resp.GetPadiInt();
 
+            PadiInt pint = resp.GetPadiInt();
             if (pint != null)
             {
                 if (cache.ContainsKey(pint.GetUid()))
@@ -222,9 +219,7 @@ namespace SampleClientApp
                     cache.Remove(pint.GetUid());
                 }
                 cache.Add(pint.GetUid(), pint);
-                UpdatePadIntPanel();
-
-               
+                UpdatePadIntPanel(); 
             }
             else
             {
@@ -259,16 +254,26 @@ namespace SampleClientApp
         private void commitButton_Click(object sender, EventArgs e)
         {
             bool resp;
-            int txNumber = 0;
+            int txNumber;
             if (usingMaster)
             {
-                resp = master.TxCommit(txNumber); ;
+                txNumber = master.TxBegin();
+                resp = CommitChanges(txNumber);
             }
             else
             {
-                resp = slave.TxCommit(txNumber); ;
+                txNumber = server.TxBegin();
+                resp = CommitChanges(txNumber);
             }
-            AppendTextBoxMethod("Tx id: " + txNumber + " has been commited!");
+            if (resp)
+            {
+                AppendTextBoxMethod("Tx id: " + txNumber + " has been commited!");
+            }
+            else
+            {
+                AppendTextBoxMethod("Tx id: " + txNumber + " has been aborted!");
+            }
+             
 
         }
 

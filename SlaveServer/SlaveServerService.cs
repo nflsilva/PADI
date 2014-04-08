@@ -8,16 +8,19 @@ using System.Threading.Tasks;
 namespace SlaveServer
 {
 
-    class SlaveServerService : MarshalByRefObject, ISlaveServer
+    class SlaveServerService : MarshalByRefObject, IServer
     {
 
         private static int MAX_NUM_SERVERS = 3;
-        private static SlaveUI ui;
-        private Dictionary<int, PadiInt> padiInts;
+
+        private Dictionary<int, PadiInt> padiInts;              //this will hold the PadiIntObjects
         private Dictionary<int, string> servers;                //this will hold the servers locals;
         private Dictionary<int, List<PadiInt>> transactions;    //this will hold the objects to be commited in this server in each transaction;
         private Dictionary<int, List<string>> participants;     //this will hold the participants in each transacions;
 
+        private int txNumber;
+
+        private static SlaveUI ui;
 
         public SlaveServerService(SlaveUI nui)
         {
@@ -35,114 +38,120 @@ namespace SlaveServer
 
         #region pad int
 
-        Response ISlaveServer.CreatePadiInt(int txNumber, int uid)
+        PadiInt IServer.CreatePadiInt(int txNumber, int uid)
         {
-            if (!transactions.ContainsKey(txNumber))
-            {
-                transactions.Add(txNumber, new List<PadiInt>());
-            }
-
-            int targetServer = uid % MAX_NUM_SERVERS;
-            if (targetServer == ui.GetServerId())
+            int targetServerID = uid % MAX_NUM_SERVERS;
+            if (targetServerID == ui.GetServerId())
             {
                 if (padiInts.ContainsKey(uid))
                 {
                     ui.Invoke(ui.cDelegate, "Create PadiInt>  PadiInt id: " + uid.ToString() + " already exists!");
-                    return new Response(false, null, null);
+                    return null;
                 }
                 else
                 {
                     PadiInt pint = new PadiInt(uid);
-                    padiInts.Add(uid, pint);
-                    ui.Invoke(ui.cDelegate, "Create PadiInt> PadiInt id: " + uid.ToString() + " was created on transaction " + txNumber + " !");
-                    return new Response(false, null, pint);
+                    ui.Invoke(ui.cDelegate, "Create PadiInt> PadiInt id: " + uid.ToString() + " was created on transaction " + txNumber +" !");
+                    return pint;
                 }
             }
             else
             {
                 ui.Invoke(ui.cDelegate, "Create PadiInt> PadiInt id: " + uid.ToString() + " isn't in this server.");
-
-                //HACK, need to be changed using something else
-                if (targetServer == 0)
-                {
-                IMasterServer master = (IMasterServer)Activator.GetObject(
-                    typeof(IMasterServer),
-                    servers[targetServer]);
-                return master.CreatePadiInt(txNumber, uid);
-                }
-                else
-                {
-                ISlaveServer slave = (ISlaveServer)Activator.GetObject(
-                    typeof(ISlaveServer),
-                    servers[targetServer]);
-                return slave.CreatePadiInt(txNumber, uid);
-                }
-
+                IServer server = (IServer)Activator.GetObject(
+                typeof(IServer),
+                servers[targetServerID]);
+                return server.CreatePadiInt(txNumber, uid);
             }
         }
 
-        Response ISlaveServer.AccessPadiInt(int txNumber, int uid)
+        //This function corresponds to a read(); the txNumber will be here only for future use, in case of a change, but for an
+        //optimistic aprouch, this isn't used
+        PadiInt IServer.AccessPadiInt(int txNumber, int uid)
         {
-            int targetServer = uid % MAX_NUM_SERVERS;
-            if (targetServer == ui.GetServerId())
+            int targetServerID = uid % MAX_NUM_SERVERS;
+            if (targetServerID == ui.GetServerId())
             {
                 if (padiInts.ContainsKey(uid))
                 {
                     ui.Invoke(ui.cDelegate, "Access PadiInt> PadiInt id: " + uid.ToString() + " was requested.");
-                    return new Response(false, null, padiInts[uid]);
+                    return padiInts[uid];
                 }
                 else
                 {
                     ui.Invoke(ui.cDelegate, "Access PadiInt> PadiInt id: " + uid.ToString() + " was not found.");
-                    return new Response(false, null, null);
+                    return null;
                 }
             }
             else
             {
                 ui.Invoke(ui.cDelegate, "Access PadiInt> PadiInt id: " + uid.ToString() + " isn't in this server.");
-
-                //HACK, need to be changed using something else
-                if (targetServer == 0)
-                {
-                    IMasterServer master = (IMasterServer)Activator.GetObject(
-                        typeof(IMasterServer),
-                        servers[targetServer]);
-                    return master.AccessPadiInt(txNumber, uid);
-                }
-                else
-                {
-                    ISlaveServer slave = (ISlaveServer)Activator.GetObject(
-                        typeof(ISlaveServer),
-                        servers[targetServer]);
-                    return slave.AccessPadiInt(txNumber, uid);
-                }
+                IServer server = (IServer)Activator.GetObject(
+                typeof(IServer),
+                servers[targetServerID]);
+                return server.AccessPadiInt(txNumber, uid);
             }
         }
 
-        Response ISlaveServer.TryWrite(int txNumber, PadiInt padiInt)
+        bool IServer.TryWrite(int txNumber, PadiInt padiInt)
         {
-            return null;
+            int uid = padiInt.GetUid();
+            int targetServerID = uid % MAX_NUM_SERVERS;
+
+            if (targetServerID == ui.GetServerId())
+            {
+                if (padiInts.ContainsKey(uid))
+                {
+                    transactions[txNumber].Add(padiInt);
+                    ui.Invoke(ui.cDelegate, "Try> Write PadiInt id: " + uid.ToString() + "with value: " + padiInt.Read());
+                    return true;
+                }
+                else
+                {
+                    ui.Invoke(ui.cDelegate, "Try> PadiInt id: " + uid.ToString() + " was not found. (this should never happen)");
+                    return false;
+                }
+            }
+            else
+            {
+                ui.Invoke(ui.cDelegate, "Try> PadiInt id: " + uid.ToString() + " isn't in this server.");
+                string serverLocal = servers[targetServerID];
+                IServer server = (IServer)Activator.GetObject(
+                typeof(IServer),
+                serverLocal);
+
+                participants[txNumber].Add(serverLocal);
+
+                return server.TryWrite(txNumber, padiInt);
+            }
         }
+           
 
         #endregion
 
         #region transactions
-        bool ISlaveServer.JoinTx(int txNumber)
+        bool IServer.JoinTx(int txNumber)
         {
             return true;
         }
 
-        int ISlaveServer.TxBegin()
+        bool IServer.TryTxCommit(int txNumber)
+        {
+            //Coordenate Transaction
+            return true;
+        }
+
+        int IServer.TxBegin()
         {
             return 0;
         }
 
-        bool ISlaveServer.TxCommit(int txNumber)
+        bool IServer.TxCommit(int txNumber)
         {
             return false;
         }
 
-        bool ISlaveServer.TxAbort(int txNumber)
+        bool IServer.TxAbort(int txNumber)
         {
             return false;
         }
@@ -151,23 +160,23 @@ namespace SlaveServer
 
         #region nodes
 
-        bool ISlaveServer.Status()
+        bool IServer.Status()
         {
             return true;
         }
 
-        bool ISlaveServer.Fail()
+        bool IServer.Fail()
         {
             return false;
         }
 
 
-        bool ISlaveServer.Freeze()
+        bool IServer.Freeze()
         {
             return false;
         }
 
-        bool ISlaveServer.Recover()
+        bool IServer.Recover()
         {
             return false;
         }

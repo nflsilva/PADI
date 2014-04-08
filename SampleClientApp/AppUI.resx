@@ -501,6 +501,9 @@
   <data name="&gt;&gt;wIDValue.ZOrder" xml:space="preserve">
     <value>5</value>
   </data>
+  <data name="wID.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
   <data name="wID.Location" type="System.Drawing.Point, System.Drawing">
     <value>79, 237</value>
   </data>
@@ -552,6 +555,9 @@
   <data name="&gt;&gt;wValueLabel.ZOrder" xml:space="preserve">
     <value>3</value>
   </data>
+  <data name="writeButton.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
   <data name="writeButton.Location" type="System.Drawing.Point, System.Drawing">
     <value>200, 235</value>
   </data>
@@ -599,6 +605,9 @@
   </data>
   <data name="&gt;&gt;commitButton.ZOrder" xml:space="preserve">
     <value>1</value>
+  </data>
+  <data name="wValueBox.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
   </data>
   <data name="wValueBox.Location" type="System.Drawing.Point, System.Drawing">
     <value>79, 263</value>
