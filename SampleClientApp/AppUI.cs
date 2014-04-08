@@ -29,23 +29,19 @@ namespace SampleClientApp
         private static TcpChannel channel;
         private IServer server;
         private Dictionary<int, PadiInt> cache;
-
+        private int txNumber;
 
         private bool isRunning;
-        private bool usingMaster;
+        private bool onTransaction;
 
         public delegate void ChangeTextBox(string text);
-        public delegate void ChangeServer(string local);
         public ChangeTextBox cDelegate;
-        public ChangeServer sDelegate;
 
         public AppUI()
         {
             InitializeComponent();
             isRunning = false;
-            usingMaster = true;
             cDelegate = new ChangeTextBox(AppendTextBoxMethod);
-            sDelegate = new ChangeServer(ChangeServerMethod);
             cache = new Dictionary<int, PadiInt>();
             dialogTextBox.Text = INTRO_MSG;
             clientPortBox.Text = APP_DEFAULT_PORT.ToString();
@@ -66,8 +62,10 @@ namespace SampleClientApp
                     createButton.Enabled = false;
                     accessIDBox.Enabled = false;
                     createIDBox.Enabled = false;
-                    wIDValue.Enabled = false;
+                    wValueBox.Enabled = false;
                     wID.Enabled = false;
+                    startTxButton.Enabled = false;
+                    writeButton.Enabled = false;
                     connectButton.Text = "Connect";
                     AppendTextBoxMethod("You are disconnected from DSTM.");
                 }
@@ -87,8 +85,10 @@ namespace SampleClientApp
                     createButton.Enabled = true;
                     accessIDBox.Enabled = true;
                     createIDBox.Enabled = true;
-                    wIDValue.Enabled = true;
+                    wValueBox.Enabled = true;
                     wID.Enabled = true;
+                    startTxButton.Enabled = true;
+                    writeButton.Enabled = true;
                     connectButton.Text = "Disconnect";
                 }
             }
@@ -135,16 +135,18 @@ namespace SampleClientApp
 
         private bool CommitChanges(int txNumber)
         {
-            Response tryResp;
-            bool comResp;
+            bool tryResp = false;
             foreach (PadiInt pint in cache.Values)
             {
                 tryResp = server.TryWrite(txNumber, pint);
+                AppendTextBoxMethod("TC: " + pint.GetUid());
+            }
+            if (tryResp)
+            {
+               return server.TryTxCommit(txNumber);
             }
 
-            comResp = server.TxCommit(txNumber);
-
-            return true;
+            return false;
         }
 
         public void AppendTextBoxMethod(string text)
@@ -173,45 +175,32 @@ namespace SampleClientApp
         //created the object on local Cache
         private void createButton_Click(object sender, EventArgs e)
         {
-            Response resp;
-            resp = server.CreatePadiInt(0, Convert.ToInt32(createIDBox.Text));
-
-            if (!resp.IsChangeServer())
+            PadiInt pint = server.CreatePadiInt(txNumber, Convert.ToInt32(createIDBox.Text));
+            if (pint == null)
             {
-
-                PadiInt pint = resp.GetPadiInt();
-                if (pint == null)
-                {
-                    AppendTextBoxMethod("Create PadiInt> PadiInt id: " + createIDBox.Text + " already exists");
-                }
-                else
-                {
-                    cache.Add(pint.GetUid(), pint);
-                    UpdatePadIntPanel();
-                } 
+                AppendTextBoxMethod("Create PadiInt> PadiInt id: " + createIDBox.Text + " already exists");
             }
             else
             {
-                usingMaster = false;
-                AppendTextBoxMethod("Create PadiInt> Changing Server");
-                SLAVE_SERVER_LOCAL = resp.GetLocal();
-                server = (IServer)Activator.GetObject(
-                    typeof(IServer),
-                    SLAVE_SERVER_LOCAL); 
-                this.createButton_Click(sender, e);
-            }
+                cache.Add(pint.GetUid(), pint);
+                UpdatePadIntPanel();
+            } 
 
         }
-
 
         //access brings the object to Cache
         private void accessButton_Click(object sender, EventArgs e)
         {
-            Response resp;
-            resp = server.AccessPadiInt(0, Convert.ToInt32(accessIDBox.Text));
-           
+            PadiInt pint;
+            if (cache.ContainsKey(Convert.ToInt32(accessIDBox.Text)))
+            {
+                pint = cache[Convert.ToInt32(accessIDBox.Text)];
+            }
+            else
+            {
+                pint = server.AccessPadiInt(txNumber, Convert.ToInt32(accessIDBox.Text));
+            }
 
-            PadiInt pint = resp.GetPadiInt();
             if (pint != null)
             {
                 if (cache.ContainsKey(pint.GetUid()))
@@ -227,12 +216,6 @@ namespace SampleClientApp
             }
 
         }
-        private void ChangeServerMethod(string local)
-        {
-            AppendTextBoxMethod("Changed server");
-            changeServer = true;
-        }
-
         private void UpdatePadIntPanel()
         {
             valuesTextBox.Text = "";
@@ -253,19 +236,7 @@ namespace SampleClientApp
 
         private void commitButton_Click(object sender, EventArgs e)
         {
-            bool resp;
-            int txNumber;
-            if (usingMaster)
-            {
-                txNumber = master.TxBegin();
-                resp = CommitChanges(txNumber);
-            }
-            else
-            {
-                txNumber = server.TxBegin();
-                resp = CommitChanges(txNumber);
-            }
-            if (resp)
+            if (CommitChanges(txNumber))
             {
                 AppendTextBoxMethod("Tx id: " + txNumber + " has been commited!");
             }
@@ -273,8 +244,16 @@ namespace SampleClientApp
             {
                 AppendTextBoxMethod("Tx id: " + txNumber + " has been aborted!");
             }
-             
+            startTxButton.Enabled = true;
+            commitButton.Enabled = false;
+        }
 
+        private void button1_Click(object sender, EventArgs e)
+        {
+            txNumber = server.TxBegin();
+            tXNumberLabel.Text = txNumber.ToString();
+            startTxButton.Enabled = false;
+            commitButton.Enabled = true;
         }
 
     }

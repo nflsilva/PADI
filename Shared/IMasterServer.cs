@@ -12,5 +12,6 @@ namespace Shared
         bool Register(int sid, string slocal);
         bool Unregister(int sid);
         string GetAvailableServer();
+        int GetTxNumber();
     }
 }

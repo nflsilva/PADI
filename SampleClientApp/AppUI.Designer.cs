@@ -49,6 +49,8 @@
             this.writeButton = new System.Windows.Forms.Button();
             this.commitButton = new System.Windows.Forms.Button();
             this.wValueBox = new System.Windows.Forms.TextBox();
+            this.startTxButton = new System.Windows.Forms.Button();
+            this.tXNumberLabel = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // label1
@@ -163,10 +165,24 @@
             resources.ApplyResources(this.wValueBox, "wValueBox");
             this.wValueBox.Name = "wValueBox";
             // 
+            // startTxButton
+            // 
+            resources.ApplyResources(this.startTxButton, "startTxButton");
+            this.startTxButton.Name = "startTxButton";
+            this.startTxButton.UseVisualStyleBackColor = true;
+            this.startTxButton.Click += new System.EventHandler(this.button1_Click);
+            // 
+            // tXNumberLabel
+            // 
+            resources.ApplyResources(this.tXNumberLabel, "tXNumberLabel");
+            this.tXNumberLabel.Name = "tXNumberLabel";
+            // 
             // AppUI
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.tXNumberLabel);
+            this.Controls.Add(this.startTxButton);
             this.Controls.Add(this.wValueBox);
             this.Controls.Add(this.commitButton);
             this.Controls.Add(this.writeButton);
@@ -215,6 +231,8 @@
         private System.Windows.Forms.Button writeButton;
         private System.Windows.Forms.Button commitButton;
         private System.Windows.Forms.TextBox wValueBox;
+        private System.Windows.Forms.Button startTxButton;
+        private System.Windows.Forms.Label tXNumberLabel;
     }
 }
 

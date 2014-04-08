@@ -25,6 +25,7 @@ namespace SlaveServer
         public SlaveServerService(SlaveUI nui)
         {
             ui = nui;
+            txNumber = 0;
             padiInts = new Dictionary<int, PadiInt>();
             servers = new Dictionary<int, string>();
             transactions = new Dictionary<int, List<PadiInt>>();
@@ -100,17 +101,13 @@ namespace SlaveServer
 
             if (targetServerID == ui.GetServerId())
             {
-                if (padiInts.ContainsKey(uid))
+                if (transactions[txNumber].Contains(padiInt))
                 {
-                    transactions[txNumber].Add(padiInt);
-                    ui.Invoke(ui.cDelegate, "Try> Write PadiInt id: " + uid.ToString() + "with value: " + padiInt.Read());
-                    return true;
+                    transactions[txNumber].Remove(padiInt);
                 }
-                else
-                {
-                    ui.Invoke(ui.cDelegate, "Try> PadiInt id: " + uid.ToString() + " was not found. (this should never happen)");
-                    return false;
-                }
+                transactions[txNumber].Add(padiInt);
+                ui.Invoke(ui.cDelegate, "Try> Write PadiInt id: " + uid.ToString() + "with value: " + padiInt.Read());
+                return true;
             }
             else
             {
@@ -120,7 +117,11 @@ namespace SlaveServer
                 typeof(IServer),
                 serverLocal);
 
-                participants[txNumber].Add(serverLocal);
+                if (!participants[txNumber].Contains(serverLocal))
+                {
+                    participants[txNumber].Add(serverLocal);
+                    server.TxJoin(txNumber);
+                }
 
                 return server.TryWrite(txNumber, padiInt);
             }
@@ -130,30 +131,90 @@ namespace SlaveServer
         #endregion
 
         #region transactions
-        bool IServer.JoinTx(int txNumber)
+        
+        bool IServer.TxJoin(int txNumber)
         {
+            transactions.Add(txNumber, new List<PadiInt>());
             return true;
         }
 
+        bool IServer.CanCommit(int txNumber)
+        {
+            //Check timestamp logic
+            return true;
+        }
         bool IServer.TryTxCommit(int txNumber)
         {
-            //Coordenate Transaction
+            IServer server;
+            //Voting Phase
+            foreach (string local in participants[txNumber])
+            {
+                server = (IServer)Activator.GetObject(
+                typeof(IServer),
+                local);
+                if (!server.CanCommit(txNumber))
+                {
+                    return false;
+                }
+            }
+            //Commit Phase
+            foreach (string local in participants[txNumber])
+            {
+                server = (IServer)Activator.GetObject(
+                typeof(IServer),
+                local);
+                if (!server.TxCommit(txNumber))
+                {
+                    return false;
+                }
+            }
+
+            //Commit on own state
+            return CommitTx(txNumber);
+        }
+        private bool CommitTx(int txNumber)
+        {
+            foreach (PadiInt pint in transactions[txNumber])
+            {
+                if (padiInts.ContainsKey(pint.GetUid()))
+                {
+                    padiInts.Remove(pint.GetUid());
+                }
+                padiInts.Add(pint.GetUid(), pint);
+
+            }
+            transactions.Remove(txNumber);
+            participants.Remove(txNumber);
+            ui.Invoke(ui.cDelegate, "TxCommit> Tx id: " + txNumber + " has been commited!");
             return true;
         }
-
+        private bool AbortTx(int txNumber)
+        {
+            transactions.Remove(txNumber);
+            ui.Invoke(ui.cDelegate, "TxAbort> Tx id: " + txNumber + " has been aborted!");
+            return true;
+        }
         int IServer.TxBegin()
         {
-            return 0;
+            IMasterServer server = (IMasterServer)Activator.GetObject(
+            typeof(IMasterServer),
+            servers[0]);
+
+            int txNumber = server.GetTxNumber(); 
+            transactions.Add(txNumber, new List<PadiInt>());
+            participants.Add(txNumber, new List<string>());
+
+            return txNumber;
         }
 
         bool IServer.TxCommit(int txNumber)
         {
-            return false;
+            return CommitTx(txNumber);
         }
 
         bool IServer.TxAbort(int txNumber)
         {
-            return false;
+            return AbortTx(txNumber);
         }
 
         #endregion

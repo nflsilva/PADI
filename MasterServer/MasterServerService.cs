@@ -12,6 +12,7 @@ namespace MasterServer
     {
 
         private static int MAX_NUM_SERVERS = 3;
+
         private Dictionary<int, PadiInt> padiInts;              //this will hold the PadiIntObjects
         private Dictionary<int, string> servers;                //this will hold the servers locals;
         private Dictionary<int, List<PadiInt>> transactions;    //this will hold the objects to be commited in this server in each transaction;
@@ -31,6 +32,7 @@ namespace MasterServer
             servers = new Dictionary<int, string>();
             transactions = new Dictionary<int, List<PadiInt>>();
             participants = new Dictionary<int, List<string>>();
+            servers.Add(0, "tcp://localhost:8086/MasterService");
         }
 
         #region pad int
@@ -97,17 +99,13 @@ namespace MasterServer
 
             if (targetServerID == ui.GetServerId())
             {
-                if (padiInts.ContainsKey(uid))
+                if (transactions[txNumber].Contains(padiInt))
                 {
-                    transactions[txNumber].Add(padiInt);
-                    ui.Invoke(ui.cDelegate, "Try> Write PadiInt id: " + uid.ToString() + "with value: " + padiInt.Read());
-                    return true;
+                    transactions[txNumber].Remove(padiInt);
                 }
-                else
-                {
-                    ui.Invoke(ui.cDelegate, "Try> PadiInt id: " + uid.ToString() + " was not found. (this should never happen)");
-                    return false;
-                }
+                transactions[txNumber].Add(padiInt);
+                ui.Invoke(ui.cDelegate, "Try> Write PadiInt id: " + uid.ToString() + "with value: " + padiInt.Read());
+                return true;
             }
             else
             {
@@ -117,7 +115,13 @@ namespace MasterServer
                 typeof(IServer),
                 serverLocal);
 
-                participants[txNumber].Add(serverLocal);
+
+                if (!participants[txNumber].Contains(serverLocal))
+                {
+                    participants[txNumber].Add(serverLocal);
+                    server.TxJoin(txNumber);
+                }
+
 
                 return server.TryWrite(txNumber, padiInt);
             }
@@ -126,6 +130,12 @@ namespace MasterServer
         #endregion
 
         #region transactions
+        bool IServer.TxJoin(int txNumber)
+        {
+            transactions.Add(txNumber, new List<PadiInt>());
+            return true;
+        }
+
         int IServer.TxBegin()
         {
             transactions.Add(txNumber, new List<PadiInt>());
@@ -135,8 +145,32 @@ namespace MasterServer
 
         bool IServer.TryTxCommit(int txNumber)
         {
-            //Coordenate Transaction
-            return true;
+            IServer server;
+            //Voting Phase
+            foreach (string local in participants[txNumber])
+            {
+                server = (IServer)Activator.GetObject(
+                typeof(IServer),
+                local);
+                if (!server.CanCommit(txNumber))
+                {
+                    return false;
+                }
+            }
+            //Commit Phase
+            foreach (string local in participants[txNumber])
+            {
+                server = (IServer)Activator.GetObject(
+                typeof(IServer),
+                local);
+                if (!server.TxCommit(txNumber))
+                {
+                    return false;
+                }
+            }
+
+            //Commit on own state
+            return CommitTx(txNumber);
         }
 
         bool IServer.CanCommit(int txNumber)
@@ -145,22 +179,37 @@ namespace MasterServer
             return true;
         }
 
-        bool IServer.TxCommit(int txNumber)
+        private bool CommitTx(int txNumber)
         {
             foreach (PadiInt pint in transactions[txNumber])
             {
+                if (padiInts.ContainsKey(pint.GetUid()))
+                {
+                    padiInts.Remove(pint.GetUid());
+                }
                 padiInts.Add(pint.GetUid(), pint);
+               
             }
             transactions.Remove(txNumber);
+            participants.Remove(txNumber);
             ui.Invoke(ui.cDelegate, "TxCommit> Tx id: " + txNumber + " has been commited!");
             return true;
         }
-
-        bool IServer.TxAbort(int txNumber)
+        private bool AbortTx(int txNumber)
         {
             transactions.Remove(txNumber);
             ui.Invoke(ui.cDelegate, "TxAbort> Tx id: " + txNumber + " has been aborted!");
             return true;
+        }
+
+        bool IServer.TxCommit(int txNumber)
+        {
+            return CommitTx(txNumber);
+        }
+
+        bool IServer.TxAbort(int txNumber)
+        {
+            return AbortTx(txNumber);
         }
 
         #endregion
@@ -191,10 +240,16 @@ namespace MasterServer
         #endregion
 
         #region master
+        int IMasterServer.GetTxNumber()
+        {
+            return txNumber++;
+        }
 
         string IMasterServer.GetAvailableServer()
         {
-            return servers[nextAvailableServer++];
+            string reps = servers[nextAvailableServer%MAX_NUM_SERVERS];
+            nextAvailableServer++;
+            return reps;
         }
 
         bool IMasterServer.Register(int sid, string slocal)

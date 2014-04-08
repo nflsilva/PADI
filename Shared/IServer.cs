@@ -11,12 +11,12 @@ namespace Shared
         PadiInt CreatePadiInt(int txNumber, int uid);
         PadiInt AccessPadiInt(int txNumber, int uid);
         bool TryWrite(int txNumber, PadiInt padiInt);
+        bool TxJoin(int txNumber);
         int TxBegin();
         bool TryTxCommit(int txNumber);
         bool CanCommit(int txNumber);
         bool TxCommit(int txNumber);
         bool TxAbort(int txNumber);
-
         bool Status();
         bool Fail();
         bool Freeze();

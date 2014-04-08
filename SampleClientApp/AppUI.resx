@@ -144,7 +144,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label1.ZOrder" xml:space="preserve">
-    <value>19</value>
+    <value>21</value>
   </data>
   <data name="label2.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -171,7 +171,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label2.ZOrder" xml:space="preserve">
-    <value>18</value>
+    <value>20</value>
   </data>
   <data name="label3.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -198,7 +198,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label3.ZOrder" xml:space="preserve">
-    <value>17</value>
+    <value>19</value>
   </data>
   <data name="clientPortBox.Location" type="System.Drawing.Point, System.Drawing">
     <value>88, 32</value>
@@ -219,7 +219,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;clientPortBox.ZOrder" xml:space="preserve">
-    <value>16</value>
+    <value>18</value>
   </data>
   <data name="masterPortBox.Location" type="System.Drawing.Point, System.Drawing">
     <value>223, 32</value>
@@ -240,7 +240,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;masterPortBox.ZOrder" xml:space="preserve">
-    <value>15</value>
+    <value>17</value>
   </data>
   <data name="connectButton.Location" type="System.Drawing.Point, System.Drawing">
     <value>282, 30</value>
@@ -264,7 +264,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;connectButton.ZOrder" xml:space="preserve">
-    <value>14</value>
+    <value>16</value>
   </data>
   <data name="createButton.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
@@ -291,7 +291,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;createButton.ZOrder" xml:space="preserve">
-    <value>13</value>
+    <value>15</value>
   </data>
   <data name="dialogTextBox.Location" type="System.Drawing.Point, System.Drawing">
     <value>16, 62</value>
@@ -315,7 +315,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;dialogTextBox.ZOrder" xml:space="preserve">
-    <value>12</value>
+    <value>14</value>
   </data>
   <data name="valuesTextBox.Location" type="System.Drawing.Point, System.Drawing">
     <value>282, 62</value>
@@ -339,7 +339,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;valuesTextBox.ZOrder" xml:space="preserve">
-    <value>11</value>
+    <value>13</value>
   </data>
   <data name="label4.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -366,7 +366,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label4.ZOrder" xml:space="preserve">
-    <value>10</value>
+    <value>12</value>
   </data>
   <data name="label5.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -393,7 +393,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label5.ZOrder" xml:space="preserve">
-    <value>9</value>
+    <value>11</value>
   </data>
   <data name="accessIDBox.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
@@ -417,7 +417,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;accessIDBox.ZOrder" xml:space="preserve">
-    <value>8</value>
+    <value>10</value>
   </data>
   <data name="createIDBox.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
@@ -441,7 +441,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;createIDBox.ZOrder" xml:space="preserve">
-    <value>7</value>
+    <value>9</value>
   </data>
   <data name="accessButton.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
@@ -468,7 +468,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;accessButton.ZOrder" xml:space="preserve">
-    <value>6</value>
+    <value>8</value>
   </data>
   <data name="wIDValue.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -499,7 +499,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;wIDValue.ZOrder" xml:space="preserve">
-    <value>5</value>
+    <value>7</value>
   </data>
   <data name="wID.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
@@ -523,7 +523,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;wID.ZOrder" xml:space="preserve">
-    <value>4</value>
+    <value>6</value>
   </data>
   <data name="wValueLabel.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -553,7 +553,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;wValueLabel.ZOrder" xml:space="preserve">
-    <value>3</value>
+    <value>5</value>
   </data>
   <data name="writeButton.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
@@ -580,10 +580,13 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;writeButton.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>4</value>
+  </data>
+  <data name="commitButton.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
   </data>
   <data name="commitButton.Location" type="System.Drawing.Point, System.Drawing">
-    <value>282, 235</value>
+    <value>282, 256</value>
   </data>
   <data name="commitButton.Size" type="System.Drawing.Size, System.Drawing">
     <value>75, 23</value>
@@ -604,7 +607,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;commitButton.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>3</value>
   </data>
   <data name="wValueBox.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
@@ -628,6 +631,60 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;wValueBox.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="startTxButton.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="startTxButton.Location" type="System.Drawing.Point, System.Drawing">
+    <value>282, 229</value>
+  </data>
+  <data name="startTxButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>75, 23</value>
+  </data>
+  <data name="startTxButton.TabIndex" type="System.Int32, mscorlib">
+    <value>21</value>
+  </data>
+  <data name="startTxButton.Text" xml:space="preserve">
+    <value>StartTx</value>
+  </data>
+  <data name="&gt;&gt;startTxButton.Name" xml:space="preserve">
+    <value>startTxButton</value>
+  </data>
+  <data name="&gt;&gt;startTxButton.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;startTxButton.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;startTxButton.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="tXNumberLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="tXNumberLabel.Location" type="System.Drawing.Point, System.Drawing">
+    <value>220, 264</value>
+  </data>
+  <data name="tXNumberLabel.Size" type="System.Drawing.Size, System.Drawing">
+    <value>19, 13</value>
+  </data>
+  <data name="tXNumberLabel.TabIndex" type="System.Int32, mscorlib">
+    <value>22</value>
+  </data>
+  <data name="tXNumberLabel.Text" xml:space="preserve">
+    <value>??</value>
+  </data>
+  <data name="&gt;&gt;tXNumberLabel.Name" xml:space="preserve">
+    <value>tXNumberLabel</value>
+  </data>
+  <data name="&gt;&gt;tXNumberLabel.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;tXNumberLabel.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;tXNumberLabel.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
