@@ -101,12 +101,19 @@ namespace MasterServer
 
         bool IMasterServer.TxCommit(int txNumber)
         {
-            return false;
+            foreach (PadiInt pint in transactions[txNumber])
+            {
+                padiInts.Add(pint.GetUid(), pint);
+            }
+            ui.Invoke(ui.cDelegate, "TxCommit> Tx id: " + txNumber + " has been commited!");
+            return true;
         }
 
         bool IMasterServer.TxAbort(int txNumber)
         {
-            return false;
+            transactions.Remove(txNumber);
+            ui.Invoke(ui.cDelegate, "TxAbort> Tx id: " + txNumber + " has been aborted!");
+            return true;
         }
 
         #endregion

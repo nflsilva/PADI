@@ -258,6 +258,17 @@ namespace SampleClientApp
 
         private void commitButton_Click(object sender, EventArgs e)
         {
+            bool resp;
+            int txNumber = 0;
+            if (usingMaster)
+            {
+                resp = master.TxCommit(txNumber); ;
+            }
+            else
+            {
+                resp = slave.TxCommit(txNumber); ;
+            }
+            AppendTextBoxMethod("Tx id: " + txNumber + " has been commited!");
 
         }
 
