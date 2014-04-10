@@ -80,10 +80,6 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MasterServer\MasterServer.csproj">
-      <Project>{96952822-869f-4043-81b5-a89780f37b59}</Project>
-      <Name>MasterServer</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Shared\Shared.csproj">
       <Project>{20c498b8-269f-42c5-8bc4-c4a76db7fa77}</Project>
       <Name>Shared</Name>

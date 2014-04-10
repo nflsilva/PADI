@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlaveServer", "SlaveServer\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleClientApp", "SampleClientApp\SampleClientApp.csproj", "{95DB743C-8385-452B-88B6-780523F971C6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PADI-DSTM", "PADI-DSTM\PADI-DSTM.csproj", "{7B9F6814-519D-4802-8576-F5E103AC2122}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{95DB743C-8385-452B-88B6-780523F971C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{95DB743C-8385-452B-88B6-780523F971C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{95DB743C-8385-452B-88B6-780523F971C6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B9F6814-519D-4802-8576-F5E103AC2122}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B9F6814-519D-4802-8576-F5E103AC2122}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B9F6814-519D-4802-8576-F5E103AC2122}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B9F6814-519D-4802-8576-F5E103AC2122}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

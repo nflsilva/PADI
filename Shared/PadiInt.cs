@@ -16,10 +16,11 @@ namespace Shared
         private int version;
 
 
-        public PadiInt(int uid){
+        public PadiInt(int uid, int version)
+        {
             this.uid = uid;
-            value = 0;
-            version = 0;
+            this.value = 0;
+            this.version = version;
         }
 
         public int GetUid()

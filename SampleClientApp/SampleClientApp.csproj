@@ -79,6 +79,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\PADI-DSTM\PADI-DSTM.csproj">
+      <Project>{7b9f6814-519d-4802-8576-f5e103ac2122}</Project>
+      <Name>PADI-DSTM</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Shared\Shared.csproj">
       <Project>{20c498b8-269f-42c5-8bc4-c4a76db7fa77}</Project>
       <Name>Shared</Name>

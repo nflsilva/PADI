@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Shared;
 using System.Windows.Forms;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MasterServer
@@ -23,11 +24,16 @@ namespace MasterServer
 
         private int nextAvailableServer;
 
+        private bool isWriting;     //flags for padiInts locks
+        private bool isReading;
+
         public MasterServerService(MasterUI nui)
         {
             ui = nui;
             txNumber = 0;
             nextAvailableServer = 0;
+            isWriting = false;
+            isReading = false;
             padiInts = new Dictionary<int, PadiInt>();
             servers = new Dictionary<int, string>();
             transactions = new Dictionary<int, List<PadiInt>>();
@@ -35,22 +41,89 @@ namespace MasterServer
             servers.Add(0, "tcp://localhost:8086/MasterService");
         }
 
-        #region pad int
 
+        #region locks
+        private void GetWriteLock()
+        {
+            Monitor.Enter(padiInts);
+
+            if (isWriting || isReading)
+            {
+                try
+                {
+                    Monitor.Wait(padiInts);
+                }
+                catch (SynchronizationLockException e)
+                {
+                    ui.Invoke(ui.cDelegate, "SycExcception");
+                }
+                catch (ThreadInterruptedException e)
+                {
+                    ui.Invoke(ui.cDelegate, "IntExcception");
+                }
+            }
+            isWriting = true;
+        }
+           
+        private void FreeWriteLock()
+        {
+            isWriting = false;
+            Monitor.Pulse(padiInts);
+
+            Monitor.Exit(padiInts);
+        }
+
+        private void GetReadLock()
+        {
+            Monitor.Enter(padiInts);
+
+            if (isWriting)
+            {
+                try
+                {
+                    Monitor.Wait(padiInts);
+                }
+                catch (SynchronizationLockException e)
+                {
+                    ui.Invoke(ui.cDelegate, "SycExcception");
+                }
+                catch (ThreadInterruptedException e)
+                {
+                    ui.Invoke(ui.cDelegate, "IntExcception");
+                }
+            }
+            isReading = true;
+        }
+
+        private void FreeReadLock()
+        {
+            isReading = false;
+            Monitor.Pulse(padiInts);
+
+            Monitor.Exit(padiInts);
+        }
+
+        #endregion
+
+        #region pad int
         PadiInt IServer.CreatePadiInt(int txNumber, int uid)
         {
             int targetServerID = uid % MAX_NUM_SERVERS;
             if (targetServerID == ui.GetServerId())
             {
+                GetReadLock();
+
                 if (padiInts.ContainsKey(uid))
                 {
                     ui.Invoke(ui.cDelegate, "Create PadiInt>  PadiInt id: " + uid.ToString() + " already exists!");
+                    FreeReadLock();
                     return null;
                 }
                 else
                 {
-                    PadiInt pint = new PadiInt(uid);
-                    ui.Invoke(ui.cDelegate, "Create PadiInt> PadiInt id: " + uid.ToString() + " was created on transaction " + txNumber +" !");
+                    PadiInt pint = new PadiInt(uid, 0);
+                    ui.Invoke(ui.cDelegate, "Create PadiInt> PadiInt id: " + uid.ToString() + " was created on transaction " + txNumber + " !");
+                    FreeReadLock();
                     return pint;
                 }
             }
@@ -59,7 +132,7 @@ namespace MasterServer
                 ui.Invoke(ui.cDelegate, "Create PadiInt> PadiInt id: " + uid.ToString() + " isn't in this server.");
                 IServer server = (IServer)Activator.GetObject(
                 typeof(IServer),
-                servers[targetServerID]);
+                GetServerById(targetServerID));
                 return server.CreatePadiInt(txNumber, uid);
             }
         }
@@ -71,14 +144,19 @@ namespace MasterServer
             int targetServerID = uid % MAX_NUM_SERVERS;
             if (targetServerID == ui.GetServerId())
             {
+                GetReadLock();
+
                 if (padiInts.ContainsKey(uid))
                 {
                     ui.Invoke(ui.cDelegate, "Access PadiInt> PadiInt id: " + uid.ToString() + " was requested.");
-                    return padiInts[uid];
+                    PadiInt pint = padiInts[uid];
+                    FreeReadLock();
+                    return pint;
                 }
                 else
                 {
                     ui.Invoke(ui.cDelegate, "Access PadiInt> PadiInt id: " + uid.ToString() + " was not found.");
+                    FreeReadLock();
                     return null;
                 }
             }
@@ -87,7 +165,7 @@ namespace MasterServer
                 ui.Invoke(ui.cDelegate, "Access PadiInt> PadiInt id: " + uid.ToString() + " isn't in this server.");
                 IServer server = (IServer)Activator.GetObject(
                 typeof(IServer),
-                servers[targetServerID]);
+                GetServerById(targetServerID));
                 return server.AccessPadiInt(txNumber, uid);
             }
         }
@@ -110,7 +188,7 @@ namespace MasterServer
             else
             {
                 ui.Invoke(ui.cDelegate, "Try> PadiInt id: " + uid.ToString() + " isn't in this server.");
-                string serverLocal = servers[targetServerID];
+                string serverLocal = GetServerById(targetServerID);
                 IServer server = (IServer)Activator.GetObject(
                 typeof(IServer),
                 serverLocal);
@@ -181,20 +259,25 @@ namespace MasterServer
 
         private bool CommitTx(int txNumber)
         {
+            PadiInt npint;
+            GetWriteLock();
             foreach (PadiInt pint in transactions[txNumber])
             {
                 if (padiInts.ContainsKey(pint.GetUid()))
                 {
                     padiInts.Remove(pint.GetUid());
                 }
-                padiInts.Add(pint.GetUid(), pint);
-               
+                npint = new PadiInt(pint.GetUid(), pint.GetVersion() + 1);
+                npint.Write(pint.Read());
+                padiInts.Add(pint.GetUid(), npint);
             }
+            FreeWriteLock();
             transactions.Remove(txNumber);
             participants.Remove(txNumber);
             ui.Invoke(ui.cDelegate, "TxCommit> Tx id: " + txNumber + " has been commited!");
             return true;
         }
+
         private bool AbortTx(int txNumber)
         {
             transactions.Remove(txNumber);
@@ -215,6 +298,32 @@ namespace MasterServer
         #endregion
 
         #region nodes
+        string IServer.GetServerLocal(int id)
+        {
+            if (servers.ContainsKey(id))
+            {
+                return servers[id];
+            }
+            else
+            {
+                return null;
+            }
+        }
+        private string GetServerById(int id)
+        {
+            if (servers.ContainsKey(id))
+            {
+                return servers[id];
+            }
+            else
+            {
+                //in the future, a new search function may be used
+                IServer server = (IServer)Activator.GetObject(typeof(IServer), servers[0]);
+                string local = server.GetServerLocal(id);
+                servers.Add(id, local);
+                return local;
+            }
+        }
         bool IServer.Status()
         {
             return false;

@@ -84,6 +84,10 @@
       <Project>{20c498b8-269f-42c5-8bc4-c4a76db7fa77}</Project>
       <Name>Shared</Name>
     </ProjectReference>
+    <ProjectReference Include="..\SlaveServer\SlaveServer.csproj">
+      <Project>{fad718d7-d275-4156-aafe-19bee4119aa3}</Project>
+      <Name>SlaveServer</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

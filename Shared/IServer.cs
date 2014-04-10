@@ -17,6 +17,7 @@ namespace Shared
         bool CanCommit(int txNumber);
         bool TxCommit(int txNumber);
         bool TxAbort(int txNumber);
+        string GetServerLocal(int id);
         bool Status();
         bool Fail();
         bool Freeze();
