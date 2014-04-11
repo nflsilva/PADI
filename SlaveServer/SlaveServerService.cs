@@ -24,12 +24,10 @@ namespace SlaveServer
         private bool isWriting;     //flags for padiInts locks
         private bool isReading;
 
-<<<<<<< HEAD
         private bool isRunning;     //state flag
         private bool fail;          //state flag for fail
 
-=======
->>>>>>> 32da9654f693d3f8f94dbd067c045268ad8dcff1
+
         private static SlaveUI ui;
 
         public SlaveServerService(SlaveUI nui)
@@ -38,11 +36,7 @@ namespace SlaveServer
             txNumber = 0;
             isWriting = false;
             isReading = false;
-<<<<<<< HEAD
-            isRunning = true;
-            fail = false;
-=======
->>>>>>> 32da9654f693d3f8f94dbd067c045268ad8dcff1
+
             padiInts = new Dictionary<int, PadiInt>();
             servers = new Dictionary<int, string>();
             transactions = new Dictionary<int, List<PadiInt>>();
@@ -278,10 +272,9 @@ namespace SlaveServer
         #region nodes
         string IServer.GetServerLocal(int id)
         {
-<<<<<<< HEAD
+
             CheckState();
-=======
->>>>>>> 32da9654f693d3f8f94dbd067c045268ad8dcff1
+
             if (servers.ContainsKey(id))
             {
                 return servers[id];
@@ -345,7 +338,6 @@ namespace SlaveServer
         #endregion
 
         #region locks
-<<<<<<< HEAD
 
         private void CheckState()
         {
@@ -358,8 +350,7 @@ namespace SlaveServer
                 while (!isRunning) ;
             }
         }
-=======
->>>>>>> 32da9654f693d3f8f94dbd067c045268ad8dcff1
+
         private void GetWriteLock()
         {
             Monitor.Enter(padiInts);

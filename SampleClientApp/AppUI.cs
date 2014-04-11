@@ -31,7 +31,6 @@ namespace SampleClientApp
         private void connectButton_Click(object sender, EventArgs e)
         {
             startTxButton.Enabled = true;
-<<<<<<< HEAD
             if (clientPortBox.Text == "")
             {
                 PadiDstm.Init();
@@ -40,9 +39,6 @@ namespace SampleClientApp
             {
                 PadiDstm.Init(Convert.ToInt32(clientPortBox.Text));
             }
-=======
-            PadiDstm.Init();
->>>>>>> 32da9654f693d3f8f94dbd067c045268ad8dcff1
         }
 
         public void AppendTextBoxMethod(string text)
@@ -123,7 +119,6 @@ namespace SampleClientApp
 
             wValueBox.Enabled = true;
             wValueBox.Text = "";
-<<<<<<< HEAD
 
             createButton.Enabled = true;
             createIDBox.Enabled = true;
@@ -156,19 +151,7 @@ namespace SampleClientApp
         private void statusButton_Click(object sender, EventArgs e)
         {
             PadiDstm.Status();
-=======
 
-            createButton.Enabled = true;
-            createIDBox.Enabled = true;
-            createIDBox.Text = "";
-
-            accessButton.Enabled = true;
-            accessIDBox.Enabled = true;
-            accessIDBox.Text = "";
-
-            PadiDstm.TxBegin();
-
->>>>>>> 32da9654f693d3f8f94dbd067c045268ad8dcff1
         }
     }
 }

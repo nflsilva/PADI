@@ -29,15 +29,12 @@ namespace MasterServer
         private bool isWriting;     //flags for padiInts locks
         private bool isReading;
 
-<<<<<<< HEAD
         private bool isRunning;     //state flag
         private bool fail;          //state flag for fail
 
         private object boolLock = new object(); //DIRTY HACK! Used to avoid active wait
 
 
-=======
->>>>>>> 32da9654f693d3f8f94dbd067c045268ad8dcff1
         public MasterServerService(MasterUI nui)
         {
             ui = nui;
@@ -45,11 +42,9 @@ namespace MasterServer
             nextAvailableServer = 0;
             isWriting = false;
             isReading = false;
-<<<<<<< HEAD
             isRunning = true;
             fail = false;
-=======
->>>>>>> 32da9654f693d3f8f94dbd067c045268ad8dcff1
+
             padiInts = new Dictionary<int, PadiInt>();
             servers = new Dictionary<int, string>();
             transactions = new Dictionary<int, List<PadiInt>>();
@@ -59,7 +54,6 @@ namespace MasterServer
 
 
         #region locks
-<<<<<<< HEAD
  
         private void CheckState()
         {
@@ -73,8 +67,6 @@ namespace MasterServer
             }
         }
 
-=======
->>>>>>> 32da9654f693d3f8f94dbd067c045268ad8dcff1
         private void GetWriteLock()
         {
             Monitor.Enter(padiInts);
@@ -96,11 +88,7 @@ namespace MasterServer
             }
             isWriting = true;
         }
-<<<<<<< HEAD
- 
-=======
-           
->>>>>>> 32da9654f693d3f8f94dbd067c045268ad8dcff1
+
         private void FreeWriteLock()
         {
             isWriting = false;
@@ -362,10 +350,8 @@ namespace MasterServer
         #region nodes
         string IServer.GetServerLocal(int id)
         {
-<<<<<<< HEAD
             CheckState();
-=======
->>>>>>> 32da9654f693d3f8f94dbd067c045268ad8dcff1
+
             if (servers.ContainsKey(id))
             {
                 return servers[id];
@@ -377,10 +363,8 @@ namespace MasterServer
         }
         private string GetServerById(int id)
         {
-<<<<<<< HEAD
+
             CheckState();
-=======
->>>>>>> 32da9654f693d3f8f94dbd067c045268ad8dcff1
             if (servers.ContainsKey(id))
             {
                 return servers[id];
