@@ -51,6 +51,12 @@
             this.wValueBox = new System.Windows.Forms.TextBox();
             this.startTxButton = new System.Windows.Forms.Button();
             this.tXNumberLabel = new System.Windows.Forms.Label();
+            this.freezeButton = new System.Windows.Forms.Button();
+            this.label6 = new System.Windows.Forms.Label();
+            this.failButton = new System.Windows.Forms.Button();
+            this.statusButton = new System.Windows.Forms.Button();
+            this.ServerLocalBox = new System.Windows.Forms.TextBox();
+            this.recoverButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // label1
@@ -177,10 +183,54 @@
             resources.ApplyResources(this.tXNumberLabel, "tXNumberLabel");
             this.tXNumberLabel.Name = "tXNumberLabel";
             // 
+            // freezeButton
+            // 
+            resources.ApplyResources(this.freezeButton, "freezeButton");
+            this.freezeButton.Name = "freezeButton";
+            this.freezeButton.UseVisualStyleBackColor = true;
+            this.freezeButton.Click += new System.EventHandler(this.freezeButton_Click_1);
+            // 
+            // label6
+            // 
+            resources.ApplyResources(this.label6, "label6");
+            this.label6.Name = "label6";
+            // 
+            // failButton
+            // 
+            resources.ApplyResources(this.failButton, "failButton");
+            this.failButton.Name = "failButton";
+            this.failButton.UseVisualStyleBackColor = true;
+            this.failButton.Click += new System.EventHandler(this.failButton_Click);
+            // 
+            // statusButton
+            // 
+            resources.ApplyResources(this.statusButton, "statusButton");
+            this.statusButton.Name = "statusButton";
+            this.statusButton.UseVisualStyleBackColor = true;
+            this.statusButton.Click += new System.EventHandler(this.statusButton_Click_1);
+            // 
+            // ServerLocalBox
+            // 
+            resources.ApplyResources(this.ServerLocalBox, "ServerLocalBox");
+            this.ServerLocalBox.Name = "ServerLocalBox";
+            // 
+            // recoverButton
+            // 
+            resources.ApplyResources(this.recoverButton, "recoverButton");
+            this.recoverButton.Name = "recoverButton";
+            this.recoverButton.UseVisualStyleBackColor = true;
+            this.recoverButton.Click += new System.EventHandler(this.recoverButton_Click_1);
+            // 
             // AppUI
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.recoverButton);
+            this.Controls.Add(this.ServerLocalBox);
+            this.Controls.Add(this.statusButton);
+            this.Controls.Add(this.failButton);
+            this.Controls.Add(this.label6);
+            this.Controls.Add(this.freezeButton);
             this.Controls.Add(this.tXNumberLabel);
             this.Controls.Add(this.startTxButton);
             this.Controls.Add(this.wValueBox);
@@ -233,6 +283,12 @@
         private System.Windows.Forms.TextBox wValueBox;
         private System.Windows.Forms.Button startTxButton;
         private System.Windows.Forms.Label tXNumberLabel;
+        private System.Windows.Forms.Button freezeButton;
+        private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.Button failButton;
+        private System.Windows.Forms.Button statusButton;
+        private System.Windows.Forms.TextBox ServerLocalBox;
+        private System.Windows.Forms.Button recoverButton;
     }
 }
 

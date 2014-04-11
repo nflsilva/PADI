@@ -132,26 +132,24 @@ namespace SampleClientApp
 
         }
 
-        private void FreezeButton_Click(object sender, EventArgs e)
+        private void freezeButton_Click_1(object sender, EventArgs e)
         {
             PadiDstm.Freeze(ServerLocalBox.Text);
-
         }
 
-        private void RecoverButton_Click(object sender, EventArgs e)
-        {
-            PadiDstm.Recover(ServerLocalBox.Text);
-        }
-
-        private void button1_Click_1(object sender, EventArgs e)
+        private void failButton_Click(object sender, EventArgs e)
         {
             PadiDstm.Fail(ServerLocalBox.Text);
         }
 
-        private void statusButton_Click(object sender, EventArgs e)
+        private void statusButton_Click_1(object sender, EventArgs e)
         {
             PadiDstm.Status();
+        }
 
+        private void recoverButton_Click_1(object sender, EventArgs e)
+        {
+            PadiDstm.Recover(ServerLocalBox.Text);
         }
     }
 }
