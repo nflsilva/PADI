@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
+using System.Net.Sockets;
 using Shared;
 
 namespace SlaveServer
@@ -104,22 +105,33 @@ namespace SlaveServer
                     serverIDBox.Enabled = false;
                     startButton.Text = "Stop";
                 }
+                else {
+                    return;                
+                }
             }
 
         }
 
         private bool OpenChannel(int port)
         {
-            channel = new TcpChannel(port);
-            ChannelServices.RegisterChannel(channel, true);
-
+            
+            try
+            {
+                channel = new TcpChannel(port);
+                ChannelServices.RegisterChannel(channel, true);
+            }
+            catch (SocketException)
+            {
+                System.Windows.Forms.MessageBox.Show("Error: Slave port already in use");
+                return false;
+            }
             SLAVE_SERVER_ID = Convert.ToInt32(serverIDBox.Text);
             SLAVE_SERVER_NAME = "server-" + SLAVE_SERVER_ID.ToString();
             SLAVE_DEFAULT_PORT = port;
             SLAVE_SERVER_LOCAL = "tcp://localhost:" + SLAVE_DEFAULT_PORT.ToString() + "/" + SLAVE_SERVER_NAME; 
 
             sss = new SlaveServerService(this);
-
+            
             RemotingServices.Marshal(sss,
                 SLAVE_SERVER_NAME,
                 typeof(SlaveServerService));
@@ -138,15 +150,28 @@ namespace SlaveServer
         }
         private bool RegisterOnMaster()
         {
+            bool response = false;
             master = (IMasterServer)Activator.GetObject(
                 typeof(IMasterServer),
                 MASTER_SERVER_LOCAL);
-
-            if (master.Register(SLAVE_SERVER_ID, SLAVE_SERVER_LOCAL))
+            try
+            {
+                response = master.Register(SLAVE_SERVER_ID, SLAVE_SERVER_LOCAL);
+            }
+            catch (SocketException)
+            {
+                System.Windows.Forms.MessageBox.Show("Error: Couldnt find master server");
+                return false;
+            }
+            finally {
+                CloseChannel();
+            }
+            if (response)
             {
                 AppendTextBoxMethod("Registered on master :)");
                 return true;
             }
+
             AppendTextBoxMethod("Couldn't register on master :(. The choosen id is already taken.");
             CloseChannel();
             return false;
