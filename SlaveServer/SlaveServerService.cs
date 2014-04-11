@@ -24,6 +24,12 @@ namespace SlaveServer
         private bool isWriting;     //flags for padiInts locks
         private bool isReading;
 
+<<<<<<< HEAD
+        private bool isRunning;     //state flag
+        private bool fail;          //state flag for fail
+
+=======
+>>>>>>> 32da9654f693d3f8f94dbd067c045268ad8dcff1
         private static SlaveUI ui;
 
         public SlaveServerService(SlaveUI nui)
@@ -32,6 +38,11 @@ namespace SlaveServer
             txNumber = 0;
             isWriting = false;
             isReading = false;
+<<<<<<< HEAD
+            isRunning = true;
+            fail = false;
+=======
+>>>>>>> 32da9654f693d3f8f94dbd067c045268ad8dcff1
             padiInts = new Dictionary<int, PadiInt>();
             servers = new Dictionary<int, string>();
             transactions = new Dictionary<int, List<PadiInt>>();
@@ -44,6 +55,7 @@ namespace SlaveServer
 
         PadiInt IServer.CreatePadiInt(int txNumber, int uid)
         {
+            CheckState();
             int targetServerID = uid % MAX_NUM_SERVERS;
             if (targetServerID == ui.GetServerId())
             {
@@ -80,6 +92,7 @@ namespace SlaveServer
         //optimistic aprouch, this isn't used
         PadiInt IServer.AccessPadiInt(int txNumber, int uid)
         {
+            CheckState();
             int targetServerID = uid % MAX_NUM_SERVERS;
             if (targetServerID == ui.GetServerId())
             {
@@ -114,6 +127,7 @@ namespace SlaveServer
 
         bool IServer.TryWrite(int txNumber, PadiInt padiInt)
         {
+            CheckState();
             int uid = padiInt.GetUid();
             int targetServerID = uid % MAX_NUM_SERVERS;
 
@@ -154,17 +168,30 @@ namespace SlaveServer
         
         bool IServer.TxJoin(int txNumber)
         {
+            CheckState();
             transactions.Add(txNumber, new List<PadiInt>());
             return true;
         }
 
         bool IServer.CanCommit(int txNumber)
         {
+            CheckState();
+            GetReadLock();
+            foreach (PadiInt pint in transactions[txNumber])
+            {
+                if (padiInts.ContainsKey(pint.GetUid()) && 
+                    (pint.GetVersion() < padiInts[pint.GetUid()].GetVersion()))
+                {
+                    return false;
+                }
+            }
+            FreeReadLock();
             //Check timestamp logic
             return true;
         }
         bool IServer.TryTxCommit(int txNumber)
         {
+            CheckState();
             IServer server;
             //Voting Phase
             foreach (string local in participants[txNumber])
@@ -215,12 +242,14 @@ namespace SlaveServer
         }
         private bool AbortTx(int txNumber)
         {
+
             transactions.Remove(txNumber);
             ui.Invoke(ui.cDelegate, "TxAbort> Tx id: " + txNumber + " has been aborted!");
             return true;
         }
         int IServer.TxBegin()
         {
+            CheckState();
             IMasterServer server = (IMasterServer)Activator.GetObject(
             typeof(IMasterServer),
             servers[0]);
@@ -234,11 +263,13 @@ namespace SlaveServer
 
         bool IServer.TxCommit(int txNumber)
         {
+            CheckState();
             return CommitTx(txNumber);
         }
 
         bool IServer.TxAbort(int txNumber)
         {
+            CheckState();
             return AbortTx(txNumber);
         }
 
@@ -247,6 +278,10 @@ namespace SlaveServer
         #region nodes
         string IServer.GetServerLocal(int id)
         {
+<<<<<<< HEAD
+            CheckState();
+=======
+>>>>>>> 32da9654f693d3f8f94dbd067c045268ad8dcff1
             if (servers.ContainsKey(id))
             {
                 return servers[id];
@@ -272,27 +307,59 @@ namespace SlaveServer
 
         bool IServer.Status()
         {
+            string state;
+            if (isRunning)
+            {
+                state = "running:)";
+            }
+            else
+            {
+                state = "fozen:(";
+            }
+
+            ui.Invoke(ui.cDelegate, "Status> My current state is " + state);
             return true;
         }
 
         bool IServer.Fail()
-        {
-            return false;
+        {;
+            CheckState();
+            fail = true;
+            return true;
         }
 
 
         bool IServer.Freeze()
         {
-            return false;
+
+            isRunning = false;
+            return true;
         }
 
         bool IServer.Recover()
         {
-            return false;
+            isRunning = true;
+            fail = false;
+            return true;
         }
         #endregion
 
         #region locks
+<<<<<<< HEAD
+
+        private void CheckState()
+        {
+            if (fail)
+            {
+                Thread.ResetAbort(); //Dont know what to call here
+            }
+            else
+            {
+                while (!isRunning) ;
+            }
+        }
+=======
+>>>>>>> 32da9654f693d3f8f94dbd067c045268ad8dcff1
         private void GetWriteLock()
         {
             Monitor.Enter(padiInts);

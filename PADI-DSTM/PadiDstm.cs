@@ -72,6 +72,16 @@ namespace PADI_DSTM
 
             return OpenChannel(APP_DEFAULT_PORT);
         }
+<<<<<<< HEAD
+        public static bool Init(int port)
+        {
+            cache = new Dictionary<int, PadiInt>();
+            dirty = new Dictionary<int, bool>();
+
+            return OpenChannel(port);
+        }
+=======
+>>>>>>> 32da9654f693d3f8f94dbd067c045268ad8dcff1
         public static bool TxBegin()
         {
             txNumber = server.TxBegin();
@@ -114,8 +124,15 @@ namespace PADI_DSTM
         }
         public static bool Status()
         {
+<<<<<<< HEAD
+            IServer s = (IServer)Activator.GetObject(
+                typeof(IServer),
+                MASTER_SERVER_LOCAL);
+            return s.Status();
+=======
 
             return server.Status();
+>>>>>>> 32da9654f693d3f8f94dbd067c045268ad8dcff1
         }
 
         public static bool Fail(string URL)
