@@ -13,8 +13,8 @@ namespace MasterServer
     {
 
         private static int MAX_NUM_SERVERS = 3;
-
-
+        private static int TIMEOUT_INTERVAL = 200;
+        
 
         private Dictionary<int, PadiInt> padiInts;              //this will hold the PadiIntObjects
         private Dictionary<int, string> servers;                //this will hold the servers locals;
@@ -57,14 +57,8 @@ namespace MasterServer
  
         private void CheckState()
         {
-            if (fail)
-            {
-                Thread.ResetAbort(); //Dont know what to call here
-            }
-            else
-            {
-                while (!isRunning) ;
-            }
+            Thread.Sleep(TIMEOUT_INTERVAL);
+            if (!isRunning) CheckState();
         }
 
         private void GetWriteLock()

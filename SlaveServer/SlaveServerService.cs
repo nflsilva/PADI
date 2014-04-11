@@ -13,6 +13,7 @@ namespace SlaveServer
     {
 
         private static int MAX_NUM_SERVERS = 3;
+        private static int TIMEOUT_INTERVAL = 200;
 
         private Dictionary<int, PadiInt> padiInts;              //this will hold the PadiIntObjects
         private Dictionary<int, string> servers;                //this will hold the servers locals;
@@ -343,11 +344,12 @@ namespace SlaveServer
         {
             if (fail)
             {
-                Thread.ResetAbort(); //Dont know what to call here
+                Environment.Exit(0);
             }
             else
             {
-                while (!isRunning) ;
+                Thread.Sleep(TIMEOUT_INTERVAL) ;
+                if (!isRunning) CheckState();
             }
         }
 
