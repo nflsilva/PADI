@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
+using System.Net.Sockets;
 using Shared;
 
 namespace PADI_DSTM
@@ -22,15 +23,15 @@ namespace PADI_DSTM
 
         private static TcpChannel channel;
         private static IServer server;
-        private static Dictionary<int, PadiInt> cache;
+        private static Dictionary<int, PadInt> cache;
         private static Dictionary<int, bool> dirty;
         private static int txNumber;
 
 
 
-        public static PadiInt CreatePadiInt(int uid)
+        public static PadInt CreatePadInt(int uid)
         {
-            PadiInt pint = server.CreatePadiInt(txNumber, uid);
+            PadInt pint = server.CreatePadiInt(txNumber, uid);
             if (pint != null)
             { 
                 //these two lines may lead to crash IF two creates are done one after another
@@ -40,9 +41,22 @@ namespace PADI_DSTM
             return pint;
         }
 
-        public static PadiInt AccessPadiInt(int uid)
+        public static PadInt WritePadInt(int uid, int pint) 
         {
-            PadiInt pint;
+            if (cache.ContainsKey(uid))
+            {
+                cache[uid].Write(pint);
+                dirty[uid] = true;
+                return cache[uid];
+            }
+            else {
+                throw new ArgumentNullException();
+            }
+        }
+
+        public static PadInt AccessPadInt(int uid)
+        {
+            PadInt pint;
             if (cache.ContainsKey(uid))
             {
                 pint = cache[uid];
@@ -67,15 +81,21 @@ namespace PADI_DSTM
 
         public static bool Init()
         {
-            cache = new Dictionary<int, PadiInt>();
+            cache = new Dictionary<int, PadInt>();
             dirty = new Dictionary<int, bool>();
-
-            return OpenChannel(APP_DEFAULT_PORT);
+            try
+            {
+                return OpenChannel(APP_DEFAULT_PORT);
+            }
+            catch (SocketException) { 
+                Random rand = new Random();
+                return OpenChannel(APP_DEFAULT_PORT + rand.Next(1, 10));            
+            }
         }
 
         public static bool Init(int port)
         {
-            cache = new Dictionary<int, PadiInt>();
+            cache = new Dictionary<int, PadInt>();
             dirty = new Dictionary<int, bool>();
 
             return OpenChannel(port);
@@ -99,10 +119,11 @@ namespace PADI_DSTM
                 cache.Clear();
                 return true;
             }
-            else
-            {
-                throw new TxException("Couldn't commit transaction");
-            }
+            //else
+            //{
+            //    throw new TxException("Couldn't commit transaction");
+            //}
+            return false;
 
 
         }
@@ -188,7 +209,7 @@ namespace PADI_DSTM
         private static bool CommitChanges(int txNumber)
         {
             bool tryResp = false;
-            foreach (PadiInt pint in cache.Values)
+            foreach (PadInt pint in cache.Values)
             {
                 if (dirty[pint.GetUid()])
                 {

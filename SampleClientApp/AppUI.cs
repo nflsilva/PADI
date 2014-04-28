@@ -11,6 +11,7 @@ using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
 using Shared;
+using System.Text.RegularExpressions;
 using PADI_DSTM;
 
 
@@ -18,7 +19,12 @@ namespace SampleClientApp
 {
     public partial class AppUI : Form
     {
-
+        private Regex ID_PATTERN = new Regex("[0-9]+");
+        private String ID_WARNING = "Invalid ID value! \r\nCan consist of numbers only. Cannot be empty";
+        private Regex VALUE_PATTERN = new Regex("[0-9]+");
+        private String VALUE_WARNING = "Invalid value! \r\nCan consist of numbers only. Cannot be empty";
+        private Regex URI_PATTERN = new Regex("(tcp)(:)(\\/)(\\/)(localhost)(:)[0-9]+(\\/)(server-[0-9])");
+        private String URI_WARNING = "Invalid URI. Format: tcp://localhost:xxxx/server-x)\r\nNB: May be found on interface of Master";
 
         public delegate void ChangeTextBox(string text);
         public ChangeTextBox cDelegate;
@@ -31,9 +37,20 @@ namespace SampleClientApp
         private void connectButton_Click(object sender, EventArgs e)
         {
             startTxButton.Enabled = true;
-            if (clientPortBox.Text == "")
+            if (clientPortBox.Text == "" && masterPortBox.Text =="")
             {
-                PadiDstm.Init();
+                DialogResult dialogResult = MessageBox.Show("Are you sure you want to use default values? \r\n" +
+                    "Client port: 8090\r\nMaster port: 8086", "PADI-DSTM", MessageBoxButtons.YesNo);
+                if (dialogResult == DialogResult.Yes)
+                {
+                    clientPortBox.Text = "8090";
+                    masterPortBox.Text = "8086";
+                    PadiDstm.Init();
+                }
+                else if (dialogResult == DialogResult.No)
+                {
+                    return;
+                }
             }
             else
             {
@@ -67,21 +84,57 @@ namespace SampleClientApp
         //created the object on local Cache
         private void createButton_Click(object sender, EventArgs e)
         {
-            PadiInt pint = PadiDstm.CreatePadiInt(Convert.ToInt32(createIDBox.Text));
+            if (!ID_PATTERN.IsMatch(createIDBox.Text))
+            {
+                MessageBox.Show(ID_WARNING);
+                return;
+            }
+            PadInt pint = PadiDstm.CreatePadInt(Convert.ToInt32(createIDBox.Text));
             AppendTextBoxMethod(valuesTextBox, pint.GetUid() + " | " + pint.Read() + " | " + pint.GetVersion());
         }
 
         //access brings the object to Cache
         private void accessButton_Click(object sender, EventArgs e)
         {
-            PadiInt pint = PadiDstm.AccessPadiInt(Convert.ToInt32(accessIDBox.Text));
-            AppendTextBoxMethod(valuesTextBox, pint.GetUid() + " | " + pint.Read() + " | " + pint.GetVersion());
+
+            if (!ID_PATTERN.IsMatch(accessIDBox.Text))
+            {
+                MessageBox.Show(ID_WARNING);
+                return;
+            }
+            PadInt pint = PadiDstm.AccessPadInt(Convert.ToInt32(accessIDBox.Text));
+            if (pint == null)
+            {
+                AppendTextBoxMethod(dialogTextBox, "PadiInt does not exist!");
+
+            }
+            else
+            {
+                AppendTextBoxMethod(valuesTextBox, pint.GetUid() + " | " + pint.Read() + " | " + pint.GetVersion());
+            }
 
         }
 
         private void writeButton_Click(object sender, EventArgs e)
         {
- 
+            if (!ID_PATTERN.IsMatch(wID.Text))
+            {
+                MessageBox.Show(ID_WARNING);
+                return;
+            }
+            if (!VALUE_PATTERN.IsMatch(wValueBox.Text))
+            {
+                MessageBox.Show(VALUE_WARNING);
+                return;
+            }
+            try
+            {
+                PadInt pint = PadiDstm.WritePadInt(Convert.ToInt32(wID.Text), Convert.ToInt32(wValueBox.Text));
+                AppendTextBoxMethod(valuesTextBox, pint.GetUid() + " | " + pint.Read() + " | " + pint.GetVersion());
+            }
+            catch (ArgumentNullException) {
+                MessageBox.Show("Cannot write. Object is not in cache.");
+            }
         }
 
         private void commitButton_Click(object sender, EventArgs e)
@@ -103,8 +156,14 @@ namespace SampleClientApp
             accessButton.Enabled = false;
             accessIDBox.Enabled = false;
             accessIDBox.Text = "";
-
-            PadiDstm.TxCommit();
+            try
+            {
+                PadiDstm.TxCommit();
+            }
+            catch (TxException)
+            {
+                MessageBox.Show("Could not commit");
+            }
             
         }
 
@@ -132,24 +191,46 @@ namespace SampleClientApp
 
         }
 
-        private void freezeButton_Click_1(object sender, EventArgs e)
+        private void FreezeButton_Click(object sender, EventArgs e)
         {
+            if (!URI_PATTERN.IsMatch(ServerLocalBox.Text))
+            {
+                MessageBox.Show(URI_WARNING);
+                return;
+            }
             PadiDstm.Freeze(ServerLocalBox.Text);
+
         }
 
-        private void failButton_Click(object sender, EventArgs e)
+        private void RecoverButton_Click(object sender, EventArgs e)
         {
+            if (!URI_PATTERN.IsMatch(ServerLocalBox.Text))
+            {
+                MessageBox.Show(URI_WARNING);
+                return;
+            }
+            PadiDstm.Recover(ServerLocalBox.Text);
+        }
+
+        private void button1_Click_1(object sender, EventArgs e)
+        {
+            if (!URI_PATTERN.IsMatch(ServerLocalBox.Text))
+            {
+                MessageBox.Show(URI_WARNING);
+                return;
+            }
             PadiDstm.Fail(ServerLocalBox.Text);
         }
 
-        private void statusButton_Click_1(object sender, EventArgs e)
+        private void statusButton_Click(object sender, EventArgs e)
         {
+            if (!URI_PATTERN.IsMatch(ServerLocalBox.Text))
+            {
+                MessageBox.Show(URI_WARNING);
+                return;
+            }
             PadiDstm.Status();
-        }
 
-        private void recoverButton_Click_1(object sender, EventArgs e)
-        {
-            PadiDstm.Recover(ServerLocalBox.Text);
         }
     }
 }

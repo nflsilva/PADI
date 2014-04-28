@@ -9,14 +9,14 @@ using System.Runtime.Serialization;
 namespace Shared
 {
     [Serializable]
-    public class PadiInt
+    public class PadInt
     {
         private int uid;
         private int value;
         private int version;
 
 
-        public PadiInt(int uid, int version)
+        public PadInt(int uid, int version)
         {
             this.uid = uid;
             this.value = 0;

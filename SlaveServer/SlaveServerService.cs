@@ -13,21 +13,18 @@ namespace SlaveServer
     {
 
         private static int MAX_NUM_SERVERS = 3;
-        private static int TIMEOUT_INTERVAL = 200;
 
-        private Dictionary<int, PadiInt> padiInts;              //this will hold the PadiIntObjects
+        private Dictionary<int, PadInt> padiInts;              //this will hold the PadiIntObjects
         private Dictionary<int, string> servers;                //this will hold the servers locals;
-        private Dictionary<int, List<PadiInt>> transactions;    //this will hold the objects to be commited in this server in each transaction;
+        private Dictionary<int, List<PadInt>> transactions;    //this will hold the objects to be commited in this server in each transaction;
         private Dictionary<int, List<string>> participants;     //this will hold the participants in each transacions;
 
         private int txNumber;
 
         private bool isWriting;     //flags for padiInts locks
         private bool isReading;
-
         private bool isRunning;     //state flag
         private bool fail;          //state flag for fail
-
 
         private static SlaveUI ui;
 
@@ -37,10 +34,11 @@ namespace SlaveServer
             txNumber = 0;
             isWriting = false;
             isReading = false;
-
-            padiInts = new Dictionary<int, PadiInt>();
+            isRunning = true;
+            fail = false;
+            padiInts = new Dictionary<int, PadInt>();
             servers = new Dictionary<int, string>();
-            transactions = new Dictionary<int, List<PadiInt>>();
+            transactions = new Dictionary<int, List<PadInt>>();
             participants = new Dictionary<int, List<string>>();
 
             servers.Add(0, "tcp://localhost:8086/MasterService");
@@ -48,7 +46,7 @@ namespace SlaveServer
 
         #region pad int
 
-        PadiInt IServer.CreatePadiInt(int txNumber, int uid)
+        PadInt IServer.CreatePadiInt(int txNumber, int uid)
         {
             CheckState();
             int targetServerID = uid % MAX_NUM_SERVERS;
@@ -65,8 +63,8 @@ namespace SlaveServer
                 }
                 else
                 {
-                    PadiInt pint = new PadiInt(uid, 0);
-                    ui.Invoke(ui.cDelegate, "Create PadiInt> PadiInt id: " + uid.ToString() + " was created on transaction " + txNumber +" !");
+                    PadInt pint = new PadInt(uid, 0);
+                    ui.Invoke(ui.cDelegate, "Create PadiInt> PadiInt id: " + uid.ToString() + " was created on transaction " + txNumber + " !");
                     FreeReadLock();
                     return pint;
                 }
@@ -85,7 +83,7 @@ namespace SlaveServer
 
         //This function corresponds to a read(); the txNumber will be here only for future use, in case of a change, but for an
         //optimistic aprouch, this isn't used
-        PadiInt IServer.AccessPadiInt(int txNumber, int uid)
+        PadInt IServer.AccessPadiInt(int txNumber, int uid)
         {
             CheckState();
             int targetServerID = uid % MAX_NUM_SERVERS;
@@ -97,7 +95,7 @@ namespace SlaveServer
                 if (padiInts.ContainsKey(uid))
                 {
                     ui.Invoke(ui.cDelegate, "Access PadiInt> PadiInt id: " + uid.ToString() + " was requested.");
-                    PadiInt pint = padiInts[uid];
+                    PadInt pint = padiInts[uid];
                     FreeReadLock();
                     return pint;
                 }
@@ -120,7 +118,7 @@ namespace SlaveServer
             }
         }
 
-        bool IServer.TryWrite(int txNumber, PadiInt padiInt)
+        bool IServer.TryWrite(int txNumber, PadInt padiInt)
         {
             CheckState();
             int uid = padiInt.GetUid();
@@ -155,16 +153,16 @@ namespace SlaveServer
                 return server.TryWrite(txNumber, padiInt);
             }
         }
-           
+
 
         #endregion
 
         #region transactions
-        
+
         bool IServer.TxJoin(int txNumber)
         {
             CheckState();
-            transactions.Add(txNumber, new List<PadiInt>());
+            transactions.Add(txNumber, new List<PadInt>());
             return true;
         }
 
@@ -172,9 +170,9 @@ namespace SlaveServer
         {
             CheckState();
             GetReadLock();
-            foreach (PadiInt pint in transactions[txNumber])
+            foreach (PadInt pint in transactions[txNumber])
             {
-                if (padiInts.ContainsKey(pint.GetUid()) && 
+                if (padiInts.ContainsKey(pint.GetUid()) &&
                     (pint.GetVersion() < padiInts[pint.GetUid()].GetVersion()))
                 {
                     return false;
@@ -216,15 +214,15 @@ namespace SlaveServer
         }
         private bool CommitTx(int txNumber)
         {
-            PadiInt npint;
+            PadInt npint;
             GetWriteLock();
-            foreach (PadiInt pint in transactions[txNumber])
+            foreach (PadInt pint in transactions[txNumber])
             {
                 if (padiInts.ContainsKey(pint.GetUid()))
                 {
                     padiInts.Remove(pint.GetUid());
                 }
-                npint = new PadiInt(pint.GetUid(), pint.GetVersion() + 1);
+                npint = new PadInt(pint.GetUid(), pint.GetVersion() + 1);
                 npint.Write(pint.Read());
                 padiInts.Add(pint.GetUid(), npint);
 
@@ -249,8 +247,8 @@ namespace SlaveServer
             typeof(IMasterServer),
             servers[0]);
 
-            int txNumber = server.GetTxNumber(); 
-            transactions.Add(txNumber, new List<PadiInt>());
+            int txNumber = server.GetTxNumber();
+            transactions.Add(txNumber, new List<PadInt>());
             participants.Add(txNumber, new List<string>());
 
             return txNumber;
@@ -273,9 +271,7 @@ namespace SlaveServer
         #region nodes
         string IServer.GetServerLocal(int id)
         {
-
             CheckState();
-
             if (servers.ContainsKey(id))
             {
                 return servers[id];
@@ -285,14 +281,16 @@ namespace SlaveServer
                 return null;
             }
         }
-        private string GetServerById(int id){
-            if(servers.ContainsKey(id)) {
+        private string GetServerById(int id)
+        {
+            if (servers.ContainsKey(id))
+            {
                 return servers[id];
             }
             else
             {
                 //in the future, a new search function may be used
-                IServer server = (IServer)Activator.GetObject(typeof(IServer),servers[0]);
+                IServer server = (IServer)Activator.GetObject(typeof(IServer), servers[0]);
                 string local = server.GetServerLocal(id);
                 servers.Add(id, local);
                 return local;
@@ -316,7 +314,8 @@ namespace SlaveServer
         }
 
         bool IServer.Fail()
-        {;
+        {
+            ;
             CheckState();
             fail = true;
             return true;
@@ -344,15 +343,13 @@ namespace SlaveServer
         {
             if (fail)
             {
-                Environment.Exit(0);
+                Environment.Exit(-1); //Dont know what to call here
             }
             else
             {
-                Thread.Sleep(TIMEOUT_INTERVAL) ;
-                if (!isRunning) CheckState();
+                while (!isRunning) ;
             }
         }
-
         private void GetWriteLock()
         {
             Monitor.Enter(padiInts);

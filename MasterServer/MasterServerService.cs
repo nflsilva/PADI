@@ -13,12 +13,12 @@ namespace MasterServer
     {
 
         private static int MAX_NUM_SERVERS = 3;
-        private static int TIMEOUT_INTERVAL = 200;
-        
 
-        private Dictionary<int, PadiInt> padiInts;              //this will hold the PadiIntObjects
+
+
+        private Dictionary<int, PadInt> padiInts;              //this will hold the PadiIntObjects
         private Dictionary<int, string> servers;                //this will hold the servers locals;
-        private Dictionary<int, List<PadiInt>> transactions;    //this will hold the objects to be commited in this server in each transaction;
+        private Dictionary<int, List<PadInt>> transactions;    //this will hold the objects to be commited in this server in each transaction;
         private Dictionary<int, List<string>> participants;     //this will hold the participants in each transacions;
 
         private static MasterUI ui;
@@ -34,7 +34,6 @@ namespace MasterServer
 
         private object boolLock = new object(); //DIRTY HACK! Used to avoid active wait
 
-
         public MasterServerService(MasterUI nui)
         {
             ui = nui;
@@ -44,23 +43,27 @@ namespace MasterServer
             isReading = false;
             isRunning = true;
             fail = false;
-
-            padiInts = new Dictionary<int, PadiInt>();
+            padiInts = new Dictionary<int, PadInt>();
             servers = new Dictionary<int, string>();
-            transactions = new Dictionary<int, List<PadiInt>>();
+            transactions = new Dictionary<int, List<PadInt>>();
             participants = new Dictionary<int, List<string>>();
             servers.Add(0, "tcp://localhost:8086/MasterService");
         }
 
 
         #region locks
- 
+
         private void CheckState()
         {
-            Thread.Sleep(TIMEOUT_INTERVAL);
-            if (!isRunning) CheckState();
+            if (fail)
+            {
+                Environment.Exit(-1); //Dont know what to call here
+            }
+            else
+            {
+                while (!isRunning) ;
+            }
         }
-
         private void GetWriteLock()
         {
             Monitor.Enter(padiInts);
@@ -82,7 +85,6 @@ namespace MasterServer
             }
             isWriting = true;
         }
-
         private void FreeWriteLock()
         {
             isWriting = false;
@@ -124,7 +126,7 @@ namespace MasterServer
         #endregion
 
         #region pad int
-        PadiInt IServer.CreatePadiInt(int txNumber, int uid)
+        PadInt IServer.CreatePadiInt(int txNumber, int uid)
         {
             CheckState();
 
@@ -141,7 +143,7 @@ namespace MasterServer
                 }
                 else
                 {
-                    PadiInt pint = new PadiInt(uid, 0);
+                    PadInt pint = new PadInt(uid, 0);
                     ui.Invoke(ui.cDelegate, "Create PadiInt> PadiInt id: " + uid.ToString() + " was created on transaction " + txNumber + " !");
                     FreeReadLock();
                     return pint;
@@ -159,7 +161,7 @@ namespace MasterServer
 
         //This function corresponds to a read(); the txNumber will be here only for future use, in case of a change, but for an
         //optimistic aprouch, this isn't used
-        PadiInt IServer.AccessPadiInt(int txNumber, int uid)
+        PadInt IServer.AccessPadiInt(int txNumber, int uid)
         {
             CheckState();
 
@@ -171,7 +173,7 @@ namespace MasterServer
                 if (padiInts.ContainsKey(uid))
                 {
                     ui.Invoke(ui.cDelegate, "Access PadiInt> PadiInt id: " + uid.ToString() + " was requested.");
-                    PadiInt pint = padiInts[uid];
+                    PadInt pint = padiInts[uid];
                     FreeReadLock();
                     return pint;
                 }
@@ -192,7 +194,7 @@ namespace MasterServer
             }
         }
 
-        bool IServer.TryWrite(int txNumber, PadiInt padiInt)
+        bool IServer.TryWrite(int txNumber, PadInt padiInt)
         {
             CheckState();
 
@@ -236,7 +238,7 @@ namespace MasterServer
         {
             CheckState();
 
-            transactions.Add(txNumber, new List<PadiInt>());
+            transactions.Add(txNumber, new List<PadInt>());
             return true;
         }
 
@@ -244,7 +246,7 @@ namespace MasterServer
         {
             CheckState();
 
-            transactions.Add(txNumber, new List<PadiInt>());
+            transactions.Add(txNumber, new List<PadInt>());
             participants.Add(txNumber, new List<string>());
             return txNumber++;
         }
@@ -285,7 +287,7 @@ namespace MasterServer
 
             //Check timestamp logic
             GetReadLock();
-            foreach (PadiInt pint in transactions[txNumber])
+            foreach (PadInt pint in transactions[txNumber])
             {
                 if (padiInts.ContainsKey(pint.GetUid()) &&
                     (pint.GetVersion() < padiInts[pint.GetUid()].GetVersion()))
@@ -299,15 +301,15 @@ namespace MasterServer
 
         private bool CommitTx(int txNumber)
         {
-            PadiInt npint;
+            PadInt npint;
             GetWriteLock();
-            foreach (PadiInt pint in transactions[txNumber])
+            foreach (PadInt pint in transactions[txNumber])
             {
                 if (padiInts.ContainsKey(pint.GetUid()))
                 {
                     padiInts.Remove(pint.GetUid());
                 }
-                npint = new PadiInt(pint.GetUid(), pint.GetVersion() + 1);
+                npint = new PadInt(pint.GetUid(), pint.GetVersion() + 1);
                 npint.Write(pint.Read());
                 padiInts.Add(pint.GetUid(), npint);
             }
@@ -345,7 +347,6 @@ namespace MasterServer
         string IServer.GetServerLocal(int id)
         {
             CheckState();
-
             if (servers.ContainsKey(id))
             {
                 return servers[id];
@@ -357,7 +358,6 @@ namespace MasterServer
         }
         private string GetServerById(int id)
         {
-
             CheckState();
             if (servers.ContainsKey(id))
             {
@@ -386,7 +386,8 @@ namespace MasterServer
 
             ui.Invoke(ui.cDelegate, "Status> My current state is " + state);
             IServer s;
-            foreach(KeyValuePair<int, string> pair in servers){
+            foreach (KeyValuePair<int, string> pair in servers)
+            {
                 if (pair.Key == 0)
                 {
                     continue;
@@ -433,7 +434,7 @@ namespace MasterServer
         string IMasterServer.GetAvailableServer()
         {
             CheckState();
-            string reps = servers[nextAvailableServer%MAX_NUM_SERVERS];
+            string reps = servers[nextAvailableServer % MAX_NUM_SERVERS];
             nextAvailableServer++;
             return reps;
         }

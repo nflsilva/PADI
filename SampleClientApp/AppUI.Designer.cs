@@ -51,12 +51,13 @@
             this.wValueBox = new System.Windows.Forms.TextBox();
             this.startTxButton = new System.Windows.Forms.Button();
             this.tXNumberLabel = new System.Windows.Forms.Label();
-            this.freezeButton = new System.Windows.Forms.Button();
             this.label6 = new System.Windows.Forms.Label();
-            this.failButton = new System.Windows.Forms.Button();
-            this.statusButton = new System.Windows.Forms.Button();
             this.ServerLocalBox = new System.Windows.Forms.TextBox();
-            this.recoverButton = new System.Windows.Forms.Button();
+            this.FreezeButton = new System.Windows.Forms.Button();
+            this.RecoverButton = new System.Windows.Forms.Button();
+            this.button1 = new System.Windows.Forms.Button();
+            this.statusButton = new System.Windows.Forms.Button();
+            this.label7 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // label1
@@ -161,9 +162,10 @@
             // 
             // commitButton
             // 
+            this.commitButton.BackColor = System.Drawing.SystemColors.GradientInactiveCaption;
             resources.ApplyResources(this.commitButton, "commitButton");
             this.commitButton.Name = "commitButton";
-            this.commitButton.UseVisualStyleBackColor = true;
+            this.commitButton.UseVisualStyleBackColor = false;
             this.commitButton.Click += new System.EventHandler(this.commitButton_Click);
             // 
             // wValueBox
@@ -173,9 +175,11 @@
             // 
             // startTxButton
             // 
+            this.startTxButton.BackColor = System.Drawing.SystemColors.GradientInactiveCaption;
             resources.ApplyResources(this.startTxButton, "startTxButton");
+            this.startTxButton.FlatAppearance.BorderColor = System.Drawing.Color.Black;
             this.startTxButton.Name = "startTxButton";
-            this.startTxButton.UseVisualStyleBackColor = true;
+            this.startTxButton.UseVisualStyleBackColor = false;
             this.startTxButton.Click += new System.EventHandler(this.button1_Click);
             // 
             // tXNumberLabel
@@ -183,54 +187,60 @@
             resources.ApplyResources(this.tXNumberLabel, "tXNumberLabel");
             this.tXNumberLabel.Name = "tXNumberLabel";
             // 
-            // freezeButton
-            // 
-            resources.ApplyResources(this.freezeButton, "freezeButton");
-            this.freezeButton.Name = "freezeButton";
-            this.freezeButton.UseVisualStyleBackColor = true;
-            this.freezeButton.Click += new System.EventHandler(this.freezeButton_Click_1);
-            // 
             // label6
             // 
             resources.ApplyResources(this.label6, "label6");
             this.label6.Name = "label6";
-            // 
-            // failButton
-            // 
-            resources.ApplyResources(this.failButton, "failButton");
-            this.failButton.Name = "failButton";
-            this.failButton.UseVisualStyleBackColor = true;
-            this.failButton.Click += new System.EventHandler(this.failButton_Click);
-            // 
-            // statusButton
-            // 
-            resources.ApplyResources(this.statusButton, "statusButton");
-            this.statusButton.Name = "statusButton";
-            this.statusButton.UseVisualStyleBackColor = true;
-            this.statusButton.Click += new System.EventHandler(this.statusButton_Click_1);
             // 
             // ServerLocalBox
             // 
             resources.ApplyResources(this.ServerLocalBox, "ServerLocalBox");
             this.ServerLocalBox.Name = "ServerLocalBox";
             // 
-            // recoverButton
+            // FreezeButton
             // 
-            resources.ApplyResources(this.recoverButton, "recoverButton");
-            this.recoverButton.Name = "recoverButton";
-            this.recoverButton.UseVisualStyleBackColor = true;
-            this.recoverButton.Click += new System.EventHandler(this.recoverButton_Click_1);
+            resources.ApplyResources(this.FreezeButton, "FreezeButton");
+            this.FreezeButton.Name = "FreezeButton";
+            this.FreezeButton.UseVisualStyleBackColor = true;
+            this.FreezeButton.Click += new System.EventHandler(this.FreezeButton_Click);
+            // 
+            // RecoverButton
+            // 
+            resources.ApplyResources(this.RecoverButton, "RecoverButton");
+            this.RecoverButton.Name = "RecoverButton";
+            this.RecoverButton.UseVisualStyleBackColor = true;
+            this.RecoverButton.Click += new System.EventHandler(this.RecoverButton_Click);
+            // 
+            // button1
+            // 
+            resources.ApplyResources(this.button1, "button1");
+            this.button1.Name = "button1";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click_1);
+            // 
+            // statusButton
+            // 
+            resources.ApplyResources(this.statusButton, "statusButton");
+            this.statusButton.Name = "statusButton";
+            this.statusButton.UseVisualStyleBackColor = true;
+            this.statusButton.Click += new System.EventHandler(this.statusButton_Click);
+            // 
+            // label7
+            // 
+            resources.ApplyResources(this.label7, "label7");
+            this.label7.Name = "label7";
             // 
             // AppUI
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.recoverButton);
-            this.Controls.Add(this.ServerLocalBox);
+            this.Controls.Add(this.label7);
             this.Controls.Add(this.statusButton);
-            this.Controls.Add(this.failButton);
+            this.Controls.Add(this.button1);
+            this.Controls.Add(this.RecoverButton);
+            this.Controls.Add(this.FreezeButton);
+            this.Controls.Add(this.ServerLocalBox);
             this.Controls.Add(this.label6);
-            this.Controls.Add(this.freezeButton);
             this.Controls.Add(this.tXNumberLabel);
             this.Controls.Add(this.startTxButton);
             this.Controls.Add(this.wValueBox);
@@ -283,12 +293,14 @@
         private System.Windows.Forms.TextBox wValueBox;
         private System.Windows.Forms.Button startTxButton;
         private System.Windows.Forms.Label tXNumberLabel;
-        private System.Windows.Forms.Button freezeButton;
         private System.Windows.Forms.Label label6;
-        private System.Windows.Forms.Button failButton;
-        private System.Windows.Forms.Button statusButton;
         private System.Windows.Forms.TextBox ServerLocalBox;
-        private System.Windows.Forms.Button recoverButton;
+        private System.Windows.Forms.Button FreezeButton;
+        private System.Windows.Forms.Button RecoverButton;
+        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button statusButton;
+        private System.Windows.Forms.Label label7;
+
     }
 }
 

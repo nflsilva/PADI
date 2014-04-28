@@ -8,9 +8,9 @@ namespace Shared
 {
     public interface IServer
     {
-        PadiInt CreatePadiInt(int txNumber, int uid);
-        PadiInt AccessPadiInt(int txNumber, int uid);
-        bool TryWrite(int txNumber, PadiInt padiInt);
+        PadInt CreatePadiInt(int txNumber, int uid);
+        PadInt AccessPadiInt(int txNumber, int uid);
+        bool TryWrite(int txNumber, PadInt padiInt);
         bool TxJoin(int txNumber);
         int TxBegin();
         bool TryTxCommit(int txNumber);

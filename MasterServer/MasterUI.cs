@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
+using System.Text.RegularExpressions;
 
 namespace MasterServer
 {
@@ -18,6 +19,8 @@ namespace MasterServer
         private static int MASTER_SERVER_ID = 0;
         private static string INTRO_MSG = "Hello, Im Master Server!";
         private static string MASTER_SERVER_NAME = "MasterService";
+        private static string MASTER_PORT_WARNING = "Incorrect input. Only numbers allowed.";
+        private static Regex MASTER_PORT_REGEX = new Regex("[0-9]+");
         private static int MASTER_DEFAULT_PORT = 8086;
 
 
@@ -77,6 +80,11 @@ namespace MasterServer
             }
             else
             {
+                if (!MASTER_PORT_REGEX.IsMatch(portBox.Text))
+                {
+                    MessageBox.Show(MASTER_PORT_WARNING);
+                    return;
+                }
                 if (OpenChannel(Convert.ToInt32(portBox.Text)))
                 {
                     isRunning = true;

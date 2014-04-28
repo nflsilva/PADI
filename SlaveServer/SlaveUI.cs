@@ -12,6 +12,7 @@ using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Net.Sockets;
 using Shared;
+using System.Text.RegularExpressions;
 
 namespace SlaveServer
 {
@@ -24,7 +25,11 @@ namespace SlaveServer
         private static string INTRO_MSG = "Hello, Im a Slave Server!";
         private static string MASTER_SERVER_LOCAL = "tcp://localhost:" + MASTER_DEFAULT_PORT.ToString() + "/MasterService";
         private static string SLAVE_SERVER_NAME = "server-" + SLAVE_SERVER_ID.ToString();
-        private static string SLAVE_SERVER_LOCAL = "tcp://localhost:" + SLAVE_DEFAULT_PORT.ToString() + "/" + SLAVE_SERVER_NAME; 
+        private static string SLAVE_SERVER_LOCAL = "tcp://localhost:" + SLAVE_DEFAULT_PORT.ToString() + "/" + SLAVE_SERVER_NAME;
+        private static string WARNING = "Incorrect input. Only numbers allowed.";
+        private static string SLAVE_ON_MASTER_WARNING = "Slave and master cannot be on the same port!";
+        private static Regex PORT_REGEX = new Regex("[0-9]+");
+        private static Regex ID_REGEX = new Regex("[0-9]+");
       
         private static TcpChannel channel;
         private SlaveServerService sss;
@@ -97,6 +102,15 @@ namespace SlaveServer
             }
             else
             {
+                if (!PORT_REGEX.IsMatch(slavePortBox.Text) || !PORT_REGEX.IsMatch(masterPortBox.Text) || !ID_REGEX.IsMatch(serverIDBox.Text))
+                {
+                    MessageBox.Show(WARNING);
+                    return;
+                }
+                if (slavePortBox.Text == masterPortBox.Text) {
+                    MessageBox.Show(SLAVE_ON_MASTER_WARNING);
+                    return;
+                }
                 if (OpenChannel(Convert.ToInt32(slavePortBox.Text)) && RegisterOnMaster())
                 {
                     isRunning = true;
@@ -162,9 +176,6 @@ namespace SlaveServer
             {
                 System.Windows.Forms.MessageBox.Show("Error: Couldnt find master server");
                 return false;
-            }
-            finally {
-                CloseChannel();
             }
             if (response)
             {
