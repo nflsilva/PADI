@@ -28,6 +28,7 @@ namespace MasterServer
 
         private bool isWriting;     //flags for padiInts locks
         private bool isReading;
+        private bool isAccessingTxNumber;
 
         private bool isRunning;     //state flag
         private bool fail;          //state flag for fail
@@ -42,6 +43,7 @@ namespace MasterServer
             isWriting = false;
             isReading = false;
             isRunning = true;
+            isAccessingTxNumber = false;
             fail = false;
             padiInts = new Dictionary<int, PadInt>();
             servers = new Dictionary<int, string>();
@@ -253,39 +255,68 @@ namespace MasterServer
 
         bool IServer.TryTxCommit(int txNumber)
         {
+            CheckState();
+            bool canCommit = true;
             IServer server;
-            //Voting Phase
-            foreach (string local in participants[txNumber])
-            {
-                server = (IServer)Activator.GetObject(
-                typeof(IServer),
-                local);
-                if (!server.CanCommit(txNumber))
-                {
-                    return false;
-                }
+
+
+            if (!CanCommitMyself(txNumber))
+            {                
+                AbortTx(txNumber);
+                canCommit = false;
             }
+            else
+            {
+                //Voting Phase
+                foreach (string local in participants[txNumber])
+                {
+                    server = (IServer)Activator.GetObject(
+                    typeof(IServer),
+                    local);
+                    if (!server.CanCommit(txNumber))
+                    {
+                        canCommit = false;
+                        break;
+                    }
+                }
+
+            }
+
+            if (!canCommit)
+            {
+
+                foreach (string local in participants[txNumber])
+                {
+                    server = (IServer)Activator.GetObject(
+                    typeof(IServer),
+                    local);
+                    server.TxAbort(txNumber);
+                }
+                return false;
+            }
+            CommitTx(txNumber);
             //Commit Phase
             foreach (string local in participants[txNumber])
             {
                 server = (IServer)Activator.GetObject(
                 typeof(IServer),
                 local);
-                if (!server.TxCommit(txNumber))
-                {
-                    return false;
-                }
+                server.TxCommit(txNumber);
+
             }
 
             //Commit on own state
-            return CommitTx(txNumber);
+            return true;
         }
 
         bool IServer.CanCommit(int txNumber)
         {
-            CheckState();
+            return CanCommitMyself(txNumber);
+        }
 
-            //Check timestamp logic
+        private bool CanCommitMyself(int txNumber)
+        {
+            CheckState();
             GetReadLock();
             foreach (PadInt pint in transactions[txNumber])
             {
@@ -296,6 +327,7 @@ namespace MasterServer
                 }
             }
             FreeReadLock();
+            //Check timestamp logic
             return true;
         }
 
@@ -322,9 +354,10 @@ namespace MasterServer
 
         private bool AbortTx(int txNumber)
         {
-            CheckState();
-
-            transactions.Remove(txNumber);
+          CheckState();
+          if(transactions.ContainsKey(txNumber)){
+                transactions.Remove(txNumber);
+            }
             ui.Invoke(ui.cDelegate, "TxAbort> Tx id: " + txNumber + " has been aborted!");
             return true;
         }
@@ -428,6 +461,32 @@ namespace MasterServer
         int IMasterServer.GetTxNumber()
         {
             CheckState();
+            /*
+            int returnTxNumber = 0;
+            Monitor.Enter(txNumber);
+            {
+                if (isAccessingTxNumber)
+                {
+                    try
+                    {
+                        Monitor.Wait(txNumber);
+                    }
+                    catch (SynchronizationLockException e)
+                    {
+                        ui.Invoke(ui.cDelegate, "SycExcception");
+                    }
+                    catch (ThreadInterruptedException e)
+                    {
+                        ui.Invoke(ui.cDelegate, "IntExcception");
+                    }
+                }
+                isAccessingTxNumber = true;
+                returnTxNumber = txNumber++;
+                isAccessingTxNumber = false;
+            }
+            Monitor.Exit(txNumber);
+
+            return returnTxNumber;*/
             return txNumber++;
         }
 

@@ -156,6 +156,9 @@ namespace SampleClientApp
             accessButton.Enabled = false;
             accessIDBox.Enabled = false;
             accessIDBox.Text = "";
+            valuesTextBox.Text = "";
+            
+
             try
             {
                 PadiDstm.TxCommit();

@@ -168,6 +168,11 @@ namespace SlaveServer
 
         bool IServer.CanCommit(int txNumber)
         {
+            return CanCommitMySelf(txNumber);
+        }
+
+        private bool CanCommitMySelf(int txNumber)
+        {
             CheckState();
             GetReadLock();
             foreach (PadInt pint in transactions[txNumber])
@@ -182,36 +187,65 @@ namespace SlaveServer
             //Check timestamp logic
             return true;
         }
+
+
         bool IServer.TryTxCommit(int txNumber)
         {
             CheckState();
+            ui.Invoke(ui.cDelegate, "Coordinating Tx id: " + txNumber);
+            bool canCommit = true;
             IServer server;
-            //Voting Phase
-            foreach (string local in participants[txNumber])
+
+            if (!CanCommitMySelf(txNumber))
             {
-                server = (IServer)Activator.GetObject(
-                typeof(IServer),
-                local);
-                if (!server.CanCommit(txNumber))
-                {
-                    return false;
-                }
+                AbortTx(txNumber);
+                canCommit = false;
             }
-            //Commit Phase
-            foreach (string local in participants[txNumber])
+            else
             {
-                server = (IServer)Activator.GetObject(
-                typeof(IServer),
-                local);
-                if (!server.TxCommit(txNumber))
+                //Voting Phase
+                foreach (string local in participants[txNumber])
                 {
-                    return false;
+                    server = (IServer)Activator.GetObject(
+                    typeof(IServer),
+                    local);
+                    if (!server.CanCommit(txNumber))
+                    {
+                        canCommit = false;
+                        break;
+                    }
                 }
             }
 
+            if (!canCommit)
+            {
+                foreach (string local in participants[txNumber])
+                {
+                    server = (IServer)Activator.GetObject(
+                    typeof(IServer),
+                    local);
+                    server.TxAbort(txNumber);
+                }
+                return false;
+            }
+
+            //Commit Phase
+            CommitTx(txNumber);
+            foreach (string local in participants[txNumber])
+            {
+                server = (IServer)Activator.GetObject(
+                typeof(IServer),
+                local);
+                server.TxCommit(txNumber);
+
+            }
+
             //Commit on own state
-            return CommitTx(txNumber);
+            return true;
         }
+
+
+
         private bool CommitTx(int txNumber)
         {
             PadInt npint;
@@ -235,8 +269,10 @@ namespace SlaveServer
         }
         private bool AbortTx(int txNumber)
         {
-
-            transactions.Remove(txNumber);
+            CheckState();
+            if(transactions.ContainsKey(txNumber)){
+                transactions.Remove(txNumber);
+            }
             ui.Invoke(ui.cDelegate, "TxAbort> Tx id: " + txNumber + " has been aborted!");
             return true;
         }

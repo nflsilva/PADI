@@ -35,8 +35,20 @@ namespace PADI_DSTM
             if (pint != null)
             { 
                 //these two lines may lead to crash IF two creates are done one after another
-                cache.Add(pint.GetUid(), pint);
-                dirty.Add(pint.GetUid(), true);
+
+                if (!cache.ContainsKey(pint.GetUid()))
+                {
+                    cache.Add(pint.GetUid(), pint);
+                }
+
+                if (!cache.ContainsKey(pint.GetUid()))
+                {
+                    dirty.Add(pint.GetUid(), true);
+                }
+                else {
+                    dirty[pint.GetUid()] = true;
+                }
+
             }
             return pint;
         }
@@ -73,8 +85,19 @@ namespace PADI_DSTM
                     cache.Remove(pint.GetUid());
                 }
                 //these two lines may lead to crash IF two access are done one after another
-                cache.Add(pint.GetUid(), pint);
-                dirty.Add(pint.GetUid(), false);
+                if (!cache.ContainsKey(pint.GetUid()))
+                {
+                    cache.Add(pint.GetUid(), pint);
+                }
+
+                if (!cache.ContainsKey(pint.GetUid()))
+                {
+                    dirty.Add(pint.GetUid(), false);
+                }
+                else
+                {
+                    dirty[pint.GetUid()] = false;
+                }
             }
             return pint;
         }
@@ -113,35 +136,25 @@ namespace PADI_DSTM
 
         public static bool TxCommit()
         {
-            if (CommitChanges(txNumber))
-            {
-                dirty.Clear();
-                cache.Clear();
-                return true;
-            }
-            //else
-            //{
-            //    throw new TxException("Couldn't commit transaction");
-            //}
-            return false;
+            bool response = CommitChanges(txNumber);
+
+            dirty.Clear();
+            cache.Clear();
+            return response;
 
 
         }
         public static bool TxAbort()
         {
 
-            if (server.TxAbort(txNumber))
-            {
-                dirty.Clear();
-                cache.Clear();
-                return true;
-            }
-            else
-            {
-                throw new TxException("Couldn't abort transaction");
-            }
+            bool response = server.TxAbort(txNumber);
+
+            dirty.Clear();
+            cache.Clear();
+            return response;
 
         }
+
         public static bool Status()
         {
             IServer s = (IServer)Activator.GetObject(
@@ -177,6 +190,7 @@ namespace PADI_DSTM
 
         private static bool OpenChannel(int port)
         {
+
             channel = new TcpChannel(port);
             ChannelServices.RegisterChannel(channel, true);
             ConnectToSystem();
