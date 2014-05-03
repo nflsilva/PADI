@@ -76,11 +76,11 @@ namespace MasterServer
                 {
                     Monitor.Wait(padiInts);
                 }
-                catch (SynchronizationLockException e)
+                catch (SynchronizationLockException)
                 {
                     ui.Invoke(ui.cDelegate, "SycExcception");
                 }
-                catch (ThreadInterruptedException e)
+                catch (ThreadInterruptedException)
                 {
                     ui.Invoke(ui.cDelegate, "IntExcception");
                 }
@@ -91,7 +91,6 @@ namespace MasterServer
         {
             isWriting = false;
             Monitor.Pulse(padiInts);
-
             Monitor.Exit(padiInts);
         }
 
@@ -105,11 +104,11 @@ namespace MasterServer
                 {
                     Monitor.Wait(padiInts);
                 }
-                catch (SynchronizationLockException e)
+                catch (SynchronizationLockException)
                 {
                     ui.Invoke(ui.cDelegate, "SycExcception");
                 }
-                catch (ThreadInterruptedException e)
+                catch (ThreadInterruptedException)
                 {
                     ui.Invoke(ui.cDelegate, "IntExcception");
                 }
@@ -121,7 +120,6 @@ namespace MasterServer
         {
             isReading = false;
             Monitor.Pulse(padiInts);
-
             Monitor.Exit(padiInts);
         }
 
@@ -166,7 +164,6 @@ namespace MasterServer
         PadInt IServer.AccessPadiInt(int txNumber, int uid)
         {
             CheckState();
-
             int targetServerID = uid % MAX_NUM_SERVERS;
             if (targetServerID == ui.GetServerId())
             {
@@ -256,13 +253,13 @@ namespace MasterServer
         bool IServer.TryTxCommit(int txNumber)
         {
             CheckState();
+            ui.Invoke(ui.cDelegate, "Coordinating Tx id: " + txNumber);
             bool canCommit = true;
             IServer server;
 
 
             if (!CanCommitMyself(txNumber))
             {                
-                AbortTx(txNumber);
                 canCommit = false;
             }
             else
@@ -292,9 +289,9 @@ namespace MasterServer
                     local);
                     server.TxAbort(txNumber);
                 }
+                AbortTx(txNumber);
                 return false;
             }
-            CommitTx(txNumber);
             //Commit Phase
             foreach (string local in participants[txNumber])
             {
@@ -306,6 +303,7 @@ namespace MasterServer
             }
 
             //Commit on own state
+            CommitTx(txNumber);
             return true;
         }
 
@@ -318,17 +316,19 @@ namespace MasterServer
         {
             CheckState();
             GetReadLock();
+            bool canCommit = true;
             foreach (PadInt pint in transactions[txNumber])
             {
                 if (padiInts.ContainsKey(pint.GetUid()) &&
                     (pint.GetVersion() < padiInts[pint.GetUid()].GetVersion()))
                 {
-                    return false;
+                    canCommit = false;
+                    break;
                 }
             }
             FreeReadLock();
             //Check timestamp logic
-            return true;
+            return canCommit;
         }
 
         private bool CommitTx(int txNumber)
@@ -357,6 +357,7 @@ namespace MasterServer
           CheckState();
           if(transactions.ContainsKey(txNumber)){
                 transactions.Remove(txNumber);
+                participants.Remove(txNumber);
             }
             ui.Invoke(ui.cDelegate, "TxAbort> Tx id: " + txNumber + " has been aborted!");
             return true;

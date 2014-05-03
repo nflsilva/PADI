@@ -230,7 +230,6 @@ namespace SlaveServer
             }
 
             //Commit Phase
-            CommitTx(txNumber);
             foreach (string local in participants[txNumber])
             {
                 server = (IServer)Activator.GetObject(
@@ -240,6 +239,7 @@ namespace SlaveServer
 
             }
 
+            CommitTx(txNumber);
             //Commit on own state
             return true;
         }
