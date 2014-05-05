@@ -24,7 +24,7 @@ namespace SlaveServer
         private static int MASTER_DEFAULT_PORT = 8086;
         private static string INTRO_MSG = "Hello, Im a Slave Server!";
         private static string MASTER_SERVER_LOCAL = "tcp://localhost:" + MASTER_DEFAULT_PORT.ToString() + "/MasterService";
-        private static string SLAVE_SERVER_NAME = "server-" + SLAVE_SERVER_ID.ToString();
+        private static string SLAVE_SERVER_NAME = "Server";
         private static string SLAVE_SERVER_LOCAL = "tcp://localhost:" + SLAVE_DEFAULT_PORT.ToString();
         private static string WARNING = "Incorrect input. Only numbers allowed.";
         private static string SLAVE_ON_MASTER_WARNING = "Slave and master cannot be on the same port!";

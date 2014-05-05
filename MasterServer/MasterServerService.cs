@@ -508,7 +508,7 @@ namespace MasterServer
             CheckState();
             int sid = nextAvailableID++;
 
-            servers.Add(sid, slocal + "/server-" + sid.ToString());
+            servers.Add(sid, slocal + "/Server");
             ui.Invoke(ui.cDelegate, "Registered server id: " + sid.ToString() + " located at: " + servers[sid]);
             return sid;
         }

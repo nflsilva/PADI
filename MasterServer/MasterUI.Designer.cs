@@ -41,6 +41,7 @@
             this.mainPanel.Multiline = true;
             this.mainPanel.Name = "mainPanel";
             this.mainPanel.ReadOnly = true;
+            this.mainPanel.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.mainPanel.Size = new System.Drawing.Size(433, 224);
             this.mainPanel.TabIndex = 0;
             // 
