@@ -23,6 +23,7 @@ namespace MasterServer
 
         private static MasterUI ui;
         private int txNumber;
+        private int nextAvailableID;
 
         private int nextAvailableServer;
 
@@ -33,13 +34,12 @@ namespace MasterServer
         private bool isRunning;     //state flag
         private bool fail;          //state flag for fail
 
-        private object boolLock = new object(); //DIRTY HACK! Used to avoid active wait
-
         public MasterServerService(MasterUI nui)
         {
             ui = nui;
             txNumber = 0;
             nextAvailableServer = 0;
+            nextAvailableID = 1;
             isWriting = false;
             isReading = false;
             isRunning = true;
@@ -86,12 +86,14 @@ namespace MasterServer
                 }
             }
             isWriting = true;
+            ui.Invoke(ui.cDelegate, "WriteLock - ON");
         }
         private void FreeWriteLock()
         {
             isWriting = false;
             Monitor.Pulse(padiInts);
             Monitor.Exit(padiInts);
+            ui.Invoke(ui.cDelegate, "WriteLock - OFF");
         }
 
         private void GetReadLock()
@@ -114,6 +116,7 @@ namespace MasterServer
                 }
             }
             isReading = true;
+            ui.Invoke(ui.cDelegate, "ReadLock - ON");
         }
 
         private void FreeReadLock()
@@ -121,6 +124,7 @@ namespace MasterServer
             isReading = false;
             Monitor.Pulse(padiInts);
             Monitor.Exit(padiInts);
+            ui.Invoke(ui.cDelegate, "ReadLock - OFF");
         }
 
         #endregion
@@ -499,16 +503,14 @@ namespace MasterServer
             return reps;
         }
 
-        bool IMasterServer.Register(int sid, string slocal)
+        int IMasterServer.Register(string slocal)
         {
             CheckState();
-            if (servers.ContainsKey(sid))
-            {
-                return false;
-            }
-            servers.Add(sid, slocal);
-            ui.Invoke(ui.cDelegate, "Registered server id: " + sid.ToString() + " located at: " + slocal);
-            return true;
+            int sid = nextAvailableID++;
+
+            servers.Add(sid, slocal + "/server-" + sid.ToString());
+            ui.Invoke(ui.cDelegate, "Registered server id: " + sid.ToString() + " located at: " + servers[sid]);
+            return sid;
         }
         bool IMasterServer.Unregister(int sid)
         {

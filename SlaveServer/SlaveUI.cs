@@ -25,7 +25,7 @@ namespace SlaveServer
         private static string INTRO_MSG = "Hello, Im a Slave Server!";
         private static string MASTER_SERVER_LOCAL = "tcp://localhost:" + MASTER_DEFAULT_PORT.ToString() + "/MasterService";
         private static string SLAVE_SERVER_NAME = "server-" + SLAVE_SERVER_ID.ToString();
-        private static string SLAVE_SERVER_LOCAL = "tcp://localhost:" + SLAVE_DEFAULT_PORT.ToString() + "/" + SLAVE_SERVER_NAME;
+        private static string SLAVE_SERVER_LOCAL = "tcp://localhost:" + SLAVE_DEFAULT_PORT.ToString();
         private static string WARNING = "Incorrect input. Only numbers allowed.";
         private static string SLAVE_ON_MASTER_WARNING = "Slave and master cannot be on the same port!";
         private static Regex PORT_REGEX = new Regex("[0-9]+");
@@ -40,7 +40,6 @@ namespace SlaveServer
         public delegate void ChangeTextBox(string text);
         public ChangeTextBox cDelegate;
 
-        
         public SlaveUI()
         {
             InitializeComponent();
@@ -139,10 +138,8 @@ namespace SlaveServer
                 System.Windows.Forms.MessageBox.Show("Error: Slave port already in use");
                 return false;
             }
-            SLAVE_SERVER_ID = Convert.ToInt32(serverIDBox.Text);
-            SLAVE_SERVER_NAME = "server-" + SLAVE_SERVER_ID.ToString();
             SLAVE_DEFAULT_PORT = port;
-            SLAVE_SERVER_LOCAL = "tcp://localhost:" + SLAVE_DEFAULT_PORT.ToString() + "/" + SLAVE_SERVER_NAME; 
+            SLAVE_SERVER_LOCAL = "tcp://localhost:" + SLAVE_DEFAULT_PORT.ToString(); 
 
             sss = new SlaveServerService(this);
             
@@ -150,7 +147,7 @@ namespace SlaveServer
                 SLAVE_SERVER_NAME,
                 typeof(SlaveServerService));
 
-            AppendTextBoxMethod("Server id: " + SLAVE_SERVER_ID + " is running on port: " + port.ToString());
+            AppendTextBoxMethod("Server is running on port: " + port.ToString());
             return true;
 
         }
@@ -164,22 +161,23 @@ namespace SlaveServer
         }
         private bool RegisterOnMaster()
         {
-            bool response = false;
+            int response = -1;
             master = (IMasterServer)Activator.GetObject(
                 typeof(IMasterServer),
                 MASTER_SERVER_LOCAL);
             try
             {
-                response = master.Register(SLAVE_SERVER_ID, SLAVE_SERVER_LOCAL);
+                response = master.Register(SLAVE_SERVER_LOCAL);
             }
             catch (SocketException)
             {
                 System.Windows.Forms.MessageBox.Show("Error: Couldnt find master server");
                 return false;
             }
-            if (response)
+            if (response>0)
             {
-                AppendTextBoxMethod("Registered on master :)");
+                SLAVE_SERVER_ID = response;
+                AppendTextBoxMethod("Registered on master :). My ID is " + response.ToString());
                 return true;
             }
 

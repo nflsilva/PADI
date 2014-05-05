@@ -26,6 +26,7 @@ namespace SlaveServer
         private bool isRunning;     //state flag
         private bool fail;          //state flag for fail
 
+
         private static SlaveUI ui;
 
         public SlaveServerService(SlaveUI nui)
@@ -168,24 +169,26 @@ namespace SlaveServer
 
         bool IServer.CanCommit(int txNumber)
         {
-            return CanCommitMySelf(txNumber);
+            return CanCommitMyself(txNumber);
         }
 
-        private bool CanCommitMySelf(int txNumber)
+        private bool CanCommitMyself(int txNumber)
         {
             CheckState();
             GetReadLock();
+            bool canCommit = true;
             foreach (PadInt pint in transactions[txNumber])
             {
                 if (padiInts.ContainsKey(pint.GetUid()) &&
                     (pint.GetVersion() < padiInts[pint.GetUid()].GetVersion()))
                 {
-                    return false;
+                    canCommit = false;
+                    break;
                 }
             }
             FreeReadLock();
             //Check timestamp logic
-            return true;
+            return canCommit;
         }
 
 
@@ -196,7 +199,7 @@ namespace SlaveServer
             bool canCommit = true;
             IServer server;
 
-            if (!CanCommitMySelf(txNumber))
+            if (!CanCommitMyself(txNumber))
             {
                 AbortTx(txNumber);
                 canCommit = false;
@@ -396,24 +399,24 @@ namespace SlaveServer
                 {
                     Monitor.Wait(padiInts);
                 }
-                catch (SynchronizationLockException e)
+                catch (SynchronizationLockException)
                 {
                     ui.Invoke(ui.cDelegate, "SycExcception");
                 }
-                catch (ThreadInterruptedException e)
+                catch (ThreadInterruptedException)
                 {
                     ui.Invoke(ui.cDelegate, "IntExcception");
                 }
             }
             isWriting = true;
+            ui.Invoke(ui.cDelegate, "WriteLock - ON");
         }
-
         private void FreeWriteLock()
         {
             isWriting = false;
             Monitor.Pulse(padiInts);
-
             Monitor.Exit(padiInts);
+            ui.Invoke(ui.cDelegate, "WriteLock - OFF");
         }
 
         private void GetReadLock()
@@ -426,24 +429,25 @@ namespace SlaveServer
                 {
                     Monitor.Wait(padiInts);
                 }
-                catch (SynchronizationLockException e)
+                catch (SynchronizationLockException)
                 {
                     ui.Invoke(ui.cDelegate, "SycExcception");
                 }
-                catch (ThreadInterruptedException e)
+                catch (ThreadInterruptedException)
                 {
                     ui.Invoke(ui.cDelegate, "IntExcception");
                 }
             }
             isReading = true;
+            ui.Invoke(ui.cDelegate, "ReadLock - ON");
         }
 
         private void FreeReadLock()
         {
             isReading = false;
             Monitor.Pulse(padiInts);
-
             Monitor.Exit(padiInts);
+            ui.Invoke(ui.cDelegate, "ReadLock - OFF");
         }
 
         #endregion

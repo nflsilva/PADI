@@ -101,6 +101,7 @@
             // 
             // serverIDBox
             // 
+            this.serverIDBox.Enabled = false;
             this.serverIDBox.Location = new System.Drawing.Point(161, 5);
             this.serverIDBox.Name = "serverIDBox";
             this.serverIDBox.Size = new System.Drawing.Size(38, 20);
