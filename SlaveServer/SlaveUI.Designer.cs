@@ -37,6 +37,10 @@
             this.masterPortBox = new System.Windows.Forms.TextBox();
             this.label3 = new System.Windows.Forms.Label();
             this.serverIDBox = new System.Windows.Forms.TextBox();
+            this.label4 = new System.Windows.Forms.Label();
+            this.label5 = new System.Windows.Forms.Label();
+            this.minPadIntBox = new System.Windows.Forms.TextBox();
+            this.maxPadIntBox = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
             // mainPanel
@@ -117,11 +121,49 @@
             this.serverIDBox.Size = new System.Drawing.Size(38, 20);
             this.serverIDBox.TabIndex = 7;
             // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(205, 9);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(71, 13);
+            this.label4.TabIndex = 9;
+            this.label4.Text = "PadInt range:";
+            // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(317, 9);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(10, 13);
+            this.label5.TabIndex = 10;
+            this.label5.Text = "-";
+            // 
+            // minPadIntBox
+            // 
+            this.minPadIntBox.Enabled = false;
+            this.minPadIntBox.Location = new System.Drawing.Point(274, 5);
+            this.minPadIntBox.Name = "minPadIntBox";
+            this.minPadIntBox.Size = new System.Drawing.Size(37, 20);
+            this.minPadIntBox.TabIndex = 11;
+            // 
+            // maxPadIntBox
+            // 
+            this.maxPadIntBox.Enabled = false;
+            this.maxPadIntBox.Location = new System.Drawing.Point(335, 5);
+            this.maxPadIntBox.Name = "maxPadIntBox";
+            this.maxPadIntBox.Size = new System.Drawing.Size(37, 20);
+            this.maxPadIntBox.TabIndex = 12;
+            // 
             // SlaveUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(465, 273);
+            this.Controls.Add(this.maxPadIntBox);
+            this.Controls.Add(this.minPadIntBox);
+            this.Controls.Add(this.label5);
+            this.Controls.Add(this.label4);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.serverIDBox);
             this.Controls.Add(this.masterPortBox);
@@ -133,7 +175,6 @@
             this.Controls.Add(this.mainPanel);
             this.Name = "SlaveUI";
             this.Text = "Slave Interface";
-            this.Load += new System.EventHandler(this.SlaveUI_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -150,5 +191,9 @@
         private System.Windows.Forms.TextBox masterPortBox;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.TextBox serverIDBox;
+        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.TextBox minPadIntBox;
+        private System.Windows.Forms.TextBox maxPadIntBox;
     }
 }

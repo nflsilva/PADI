@@ -12,16 +12,13 @@ namespace MasterServer
     public class MasterServerService : MarshalByRefObject, IMasterServer
     {
 
-        private static int MAX_NUM_SERVERS = 3;
-
-
-
         private Dictionary<int, PadInt> padiInts;               //this will hold the PadiIntObjects
         private Dictionary<int, string> servers;                //this will hold the servers locals;
         private Dictionary<int, List<PadInt>> transactions;     //this will hold the objects to be commited in this server in each transaction;
         private Dictionary<int, List<string>> participants;     //this will hold the participants in each transacions;
-        private Dictionary<int, string> deadServers;            //this will hold the dead servers on the ring, so the intervals stay balanced 
-        private Dictionary<int, string> pairs;   
+        private Dictionary<int, string> deadServers;            //this will hold the dead servers on the ring, so the intervals stay balanced; 
+        private Dictionary<int, string> pairs;                  //this will hold the pairs of each edge of the ring. Its used to recover the ring;
+        private Dictionary<int, Tuple<int, int>> ranges;        //this will hold the range of each node of the ring. Used for routing ;
 
         private static MasterUI ui;
         private Thread workerThread;
@@ -51,6 +48,8 @@ namespace MasterServer
         public MasterServerService(MasterUI nui)
         {
             ui = nui;
+            minUID = 0;
+            maxUID = 1000;
             txNumber = 0;
             nextAvailableServer = 0;
             nextAvailableID = 1;
@@ -66,6 +65,9 @@ namespace MasterServer
             participants = new Dictionary<int, List<string>>();
             deadServers = new Dictionary<int, string>();
             pairs = new Dictionary<int, string>();
+            ranges = new Dictionary<int, Tuple<int, int>>();
+            ranges.Add(0, new Tuple<int, int>(minUID, maxUID));
+
             servers.Add(0, "tcp://localhost:8086/MasterService");
             SetNextServer(servers[0]);
 
@@ -75,6 +77,70 @@ namespace MasterServer
         }
 
         #region ring
+        bool IMasterServer.SplitRange(int myID, string targLocal)
+        {
+            int targID = GetIDByLocal(targLocal);
+
+            int new_max = ranges[targID].Item2;
+
+            ranges[targID] = new Tuple<int, int> (ranges[targID].Item1, ranges[targID].Item1 + ((ranges[targID].Item2 - ranges[targID].Item1)/2));
+
+            int new_min = ranges[targID].Item2 + 1;
+
+            if (!ranges.ContainsKey(myID))
+            {
+                ranges.Add(myID, new Tuple<int, int>(new_min, new_max));
+            }
+            else
+            {
+                ranges[myID] = new Tuple<int, int>(new_min , new_max);
+            }
+            ui.Invoke(ui.cDelegate, "SPLITED> " + myID + " [" + ranges[myID].Item1 + "-" + ranges[myID].Item2 + "]");
+            ui.Invoke(ui.cDelegate, "SPLITED> " + targID + " [" + ranges[targID].Item1 + "-" + ranges[targID].Item2 + "]");
+            return true;
+        }
+        int[] IMasterServer.JoinRange(int myID, string targLocal)
+        {
+            int[] resp = new int[2];
+            int targID = GetIDByLocal(targLocal);
+            ui.Invoke(ui.cDelegate, "JOINED> " + myID + " with " + targID);
+
+            int new_min = 2 * ranges[targID].Item2 - 4 * ranges[myID].Item2;
+            //FIXME: WRONG CALCULUM D:
+
+            int new_max = ranges[targID].Item2;
+            resp[0] = new_min;
+            resp[1] = new_max;
+
+            if (!ranges.ContainsKey(myID))
+            {
+                ranges.Add(myID, new Tuple<int, int>(new_min, new_max));
+            }
+            else
+            {
+                ranges[myID] = new Tuple<int, int>(new_min, new_max);
+            }
+
+            ui.Invoke(ui.cDelegate, "JOINED> " + myID + " [" + ranges[myID].Item1 + "-" + ranges[myID].Item2 + "]");
+            return resp;
+        }
+
+        string IMasterServer.GetServerLocalForPadInt(int uid)
+        {
+            foreach (KeyValuePair<int, Tuple<int, int>> entry in ranges)
+            {
+                if (uid >= entry.Value.Item1 && uid <= entry.Value.Item2)
+                {
+
+
+                    ui.Invoke(ui.cDelegate, "OUT> " + uid + " is in server " + entry.Key);
+                    return servers[entry.Key];
+                }
+            }
+            return "NOT FOUND :O";
+        }
+
+
         public void PingNext()
         {
             while (true)
@@ -93,10 +159,14 @@ namespace MasterServer
                         IMasterServer m = (IMasterServer)Activator.GetObject(
                             typeof(IMasterServer),
                             servers[0]);
+                        int[] new_range = m.JoinRange(ui.GetServerId(), nextServerLocal);
                         nextServerLocal = m.AddDeadServer(nextServerLocal, servers[0]);
+                        minUID = new_range[0];
+                        maxUID = new_range[1];
+                        ui.Invoke(ui.pDelegate, minUID, maxUID);
                         ui.Invoke(ui.cDelegate, "Server " + nextServerLocal + " doesn't responde. New next is: " + nextServerLocal);
                     }
-                    Thread.Sleep(1000);
+                    Thread.Sleep(10000);
                 }
             }
         }
@@ -130,6 +200,17 @@ namespace MasterServer
         {
             nextServerLocal = local;
             pingRunning = true;
+        }
+
+        int[] IServer.Split()
+        {
+            int[] resp = new int[2];
+            resp[1] = maxUID;
+            maxUID = minUID + ((maxUID - minUID) / 2);
+            resp[0] = maxUID + 1;
+            ui.Invoke(ui.pDelegate, minUID, maxUID);
+
+            return resp;
         }
 
 
@@ -216,14 +297,9 @@ namespace MasterServer
         PadInt IServer.CreatePadiInt(int txNumber, int uid)
         {
             CheckState();
-            nextServer = null;
-            nextServer = (IServer)Activator.GetObject(
-                typeof(IServer),
-                nextServerLocal);
-            nextServer.Ping(ui.GetServerId());
 
-            int targetServerID = uid % servers.Count;
-            if (targetServerID == ui.GetServerId())
+            bool belogsHere = uid >= minUID && uid <= maxUID;
+            if (belogsHere)
             {
                 GetReadLock();
 
@@ -244,10 +320,18 @@ namespace MasterServer
             else
             {
                 ui.Invoke(ui.cDelegate, "Create PadiInt> PadiInt id: " + uid.ToString() + " isn't in this server.");
-                IServer server = (IServer)Activator.GetObject(
-                typeof(IServer),
-                GetServerById(targetServerID));
-                return server.CreatePadiInt(txNumber, uid);
+
+                IMasterServer m = (IMasterServer)Activator.GetObject(
+                typeof(IMasterServer),
+                servers[0]);
+
+                string targetLocal = m.GetServerLocalForPadInt(uid);
+
+                IServer s = (IServer)Activator.GetObject(
+                    typeof(IServer),
+                    targetLocal);
+
+                return s.CreatePadiInt(txNumber, uid);
             }
         }
 
@@ -256,8 +340,8 @@ namespace MasterServer
         PadInt IServer.AccessPadiInt(int txNumber, int uid)
         {
             CheckState();
-            int targetServerID = uid % MAX_NUM_SERVERS;
-            if (targetServerID == ui.GetServerId())
+            bool belogsHere = uid >= minUID && uid <= maxUID;
+            if (belogsHere)
             {
                 GetReadLock();
 
@@ -278,10 +362,17 @@ namespace MasterServer
             else
             {
                 ui.Invoke(ui.cDelegate, "Access PadiInt> PadiInt id: " + uid.ToString() + " isn't in this server.");
-                IServer server = (IServer)Activator.GetObject(
-                typeof(IServer),
-                GetServerById(targetServerID));
-                return server.AccessPadiInt(txNumber, uid);
+                IMasterServer m = (IMasterServer)Activator.GetObject(
+                typeof(IMasterServer),
+                servers[0]);
+
+                string targetLocal = m.GetServerLocalForPadInt(uid);
+
+                IServer s = (IServer)Activator.GetObject(
+                    typeof(IServer),
+                    targetLocal);
+
+                return s.AccessPadiInt(txNumber, uid);
             }
         }
 
@@ -290,9 +381,8 @@ namespace MasterServer
             CheckState();
 
             int uid = padiInt.GetUid();
-            int targetServerID = uid % MAX_NUM_SERVERS;
-
-            if (targetServerID == ui.GetServerId())
+            bool belogsHere = uid >= minUID && uid <= maxUID;
+            if (belogsHere)
             {
                 if (transactions[txNumber].Contains(padiInt))
                 {
@@ -305,7 +395,13 @@ namespace MasterServer
             else
             {
                 ui.Invoke(ui.cDelegate, "Try> PadiInt id: " + uid.ToString() + " isn't in this server.");
-                string serverLocal = GetServerById(targetServerID);
+
+                IMasterServer m = (IMasterServer)Activator.GetObject(
+                    typeof(IMasterServer),
+                    servers[0]);
+                string serverLocal =  m.GetServerLocalForPadInt(uid);
+
+
                 IServer server = (IServer)Activator.GetObject(
                 typeof(IServer),
                 serverLocal);
@@ -328,8 +424,8 @@ namespace MasterServer
         bool IServer.TxJoin(int txNumber)
         {
             CheckState();
-
             transactions.Add(txNumber, new List<PadInt>());
+
             return true;
         }
 
@@ -530,7 +626,7 @@ namespace MasterServer
         bool IServer.Fail()
         {
             CheckState();
-            //fail = true;
+            fail = true;
             return true;
         }
         bool IServer.Ping(int nid)
@@ -565,7 +661,7 @@ namespace MasterServer
         string IMasterServer.GetAvailableServer()
         {
             CheckState();
-            string reps = servers[nextAvailableServer % MAX_NUM_SERVERS];
+            string reps = servers[nextAvailableServer % servers.Count];
             nextAvailableServer++;
             return reps;
         }
@@ -605,14 +701,8 @@ namespace MasterServer
         string IMasterServer.AddDeadServer(string deadLocal, string local)
         {
             CheckState();
-            int sid = 0;
-            foreach(KeyValuePair<int, string> entry in servers){
-                if (entry.Value.Equals(deadLocal))
-                {
-                    sid = entry.Key;
-                    break;
-                }
-            }
+            int sid = GetIDByLocal(deadLocal);
+
             if (!deadServers.ContainsKey(sid))
             {
                 deadServers.Add(sid, local);
@@ -620,6 +710,17 @@ namespace MasterServer
             servers.Remove(sid);
             return pairs[sid];
 
+        }
+        private int GetIDByLocal(string local)
+        {
+            foreach (KeyValuePair<int, string> entry in servers)
+            {
+                if (entry.Value.Equals(local))
+                {
+                    return entry.Key;
+                }
+            }
+            return -1;
         }
 
         bool IMasterServer.RegisterNext(int sid, string nextLocal)

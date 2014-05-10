@@ -15,5 +15,10 @@ namespace Shared
         int GetTxNumber();
         bool RegisterNext(int sid, string nextLocal);
         string AddDeadServer(string deadLocal, string local);
+
+        bool SplitRange(int uid, string local);
+        int[] JoinRange(int uid, string local);
+
+        string GetServerLocalForPadInt(int uid);
     }
 }

@@ -24,5 +24,9 @@ namespace Shared
         bool Freeze();
         bool Recover();
         bool Ping(int id);
+
+        int[] Split();
+
+
     }
 }

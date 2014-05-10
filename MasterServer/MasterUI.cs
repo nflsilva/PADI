@@ -30,13 +30,17 @@ namespace MasterServer
   
 
         public delegate void ChangeTextBox(string text);
+        public delegate void ChangePadIntRange(int min, int max);
         public ChangeTextBox cDelegate;
+        public ChangePadIntRange pDelegate;
+
 
 
         public MasterUI()
         {
             InitializeComponent();        
             cDelegate = new ChangeTextBox(AppendTextBoxMethod);
+            pDelegate = new ChangePadIntRange(ChangeInterval);
             isRunning = false;
             mainPanel.Text = INTRO_MSG;
             portBox.Text = MASTER_DEFAULT_PORT.ToString();
@@ -56,6 +60,11 @@ namespace MasterServer
             else {
                 mainPanel.AppendText("\r\n" + text);
             }
+        }
+        public void ChangeInterval(int min, int max)
+        {
+            this.maxPadIntBox.Text = max.ToString();
+            this.minPadIntBox.Text = min.ToString();
         }
 
         private void MasterUI_Load(object sender, EventArgs e)
@@ -98,7 +107,7 @@ namespace MasterServer
         private bool OpenChannel(int port)
         {
             channel = new TcpChannel(port);
-            ChannelServices.RegisterChannel(channel, true);
+            ChannelServices.RegisterChannel(channel, false);
             mss = new MasterServerService(this);
 
             RemotingServices.Marshal(mss,
@@ -113,6 +122,26 @@ namespace MasterServer
             RemotingServices.Disconnect(mss);
             isRunning = false;
             return true;
+
+        }
+
+        private void label4_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void minPadIntBox_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label5_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void maxPadIntBox_TextChanged(object sender, EventArgs e)
+        {
 
         }
 

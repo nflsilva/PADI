@@ -38,13 +38,16 @@ namespace SlaveServer
 
         private bool isRunning;
         public delegate void ChangeTextBox(string text);
+        public delegate void ChangePadIntRange(int min, int max);
         public ChangeTextBox cDelegate;
+        public ChangePadIntRange pDelegate;
 
         public SlaveUI()
         {
             InitializeComponent();
             isRunning = false;
             cDelegate = new ChangeTextBox(AppendTextBoxMethod);
+            pDelegate = new ChangePadIntRange(ChangeInterval);
             mainPanel.Text = INTRO_MSG;
             masterPortBox.Text = MASTER_DEFAULT_PORT.ToString();
             slavePortBox.Text = SLAVE_DEFAULT_PORT.ToString();
@@ -56,11 +59,6 @@ namespace SlaveServer
             InitializeComponent();
             cDelegate = new ChangeTextBox(AppendTextBoxMethod);
             this.master = master;
-        }
-
-        private void SlaveUI_Load(object sender, EventArgs e)
-        {
-
         }
 
         public int GetServerId()
@@ -83,6 +81,12 @@ namespace SlaveServer
                 this.mainPanel.AppendText("\r\n" + text);
             }
 
+        }
+
+        public void ChangeInterval(int min, int max)
+        {
+            this.maxPadIntBox.Text = max.ToString();
+            this.minPadIntBox.Text = min.ToString();
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -135,7 +139,7 @@ namespace SlaveServer
             try
             {
                 channel = new TcpChannel(port);
-                ChannelServices.RegisterChannel(channel, true);
+                ChannelServices.RegisterChannel(channel, false);
             }
             catch (SocketException)
             {
@@ -182,10 +186,14 @@ namespace SlaveServer
             if (Convert.ToInt32(response[0])>0)
             {
                 SLAVE_SERVER_ID = Convert.ToInt32(response[0]);
-
+                this.serverIDBox.Text = response[0];
                 IServer sserver = (IServer)Activator.GetObject(
                     typeof(IServer),
                     response[1]);
+                int[] range = sserver.Split();
+                master.SplitRange(SLAVE_SERVER_ID, response[1]);
+                sss.SetPadIntRange(range[0], range[1]);
+                this.ChangeInterval(range[0], range[1]);
 
                 sss.SetNextServer(sserver.EnterRing(SLAVE_SERVER_LOCAL));
                 master.RegisterNext(SLAVE_SERVER_ID, sss.GetNextServer());

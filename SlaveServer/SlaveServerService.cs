@@ -11,9 +11,6 @@ namespace SlaveServer
 
     class SlaveServerService : MarshalByRefObject, IServer
     {
-
-        private static int MAX_NUM_SERVERS = 3;
-
         private Dictionary<int, PadInt> padiInts;              //this will hold the PadiIntObjects
         private Dictionary<int, string> servers;                //this will hold the servers locals;
         private Dictionary<int, List<PadInt>> transactions;    //this will hold the objects to be commited in this server in each transaction;
@@ -61,7 +58,13 @@ namespace SlaveServer
             workerThread.Start();
         }
 
+
         #region ring
+        public void SetPadIntRange(int min, int max)
+        {
+            minUID = min;
+            maxUID = max;
+        }
         public void PingNext()
         {
             while (true)
@@ -80,11 +83,15 @@ namespace SlaveServer
                         IMasterServer m = (IMasterServer)Activator.GetObject(
                             typeof(IMasterServer),
                             servers[0]);
+                        int[] new_range = m.JoinRange(ui.GetServerId(), nextServerLocal);
                         nextServerLocal = m.AddDeadServer(nextServerLocal, ui.GetServerLocal());
+                        minUID = new_range[0];
+                        maxUID = new_range[1];
+                        ui.Invoke(ui.pDelegate, minUID, maxUID);
                         ui.Invoke(ui.cDelegate, "Server " + nextServerLocal + " doesn't responde. New next is: " + nextServerLocal);
                     }
                 }
-                Thread.Sleep(1000);
+                Thread.Sleep(10000);
             }
         }
 
@@ -109,6 +116,17 @@ namespace SlaveServer
             m.RegisterNext(ui.GetServerId(), nextServerLocal);
             return response;
         }
+        int[] IServer.Split()
+        {
+            int[] resp = new int[2];
+
+            resp[1] = maxUID;
+            maxUID = minUID + ((maxUID - minUID) / 2);
+            resp[0] = maxUID + 1;
+            ui.Invoke(ui.pDelegate, minUID, maxUID);
+
+            return resp;
+        }
 
         #endregion
 
@@ -117,15 +135,9 @@ namespace SlaveServer
         PadInt IServer.CreatePadiInt(int txNumber, int uid)
         {
             CheckState();
-            nextServer = null;
-            nextServer = (IServer)Activator.GetObject(
-                typeof(IServer),
-                nextServerLocal);
-            nextServer.Ping(ui.GetServerId());
 
-
-            int targetServerID = uid % MAX_NUM_SERVERS;
-            if (targetServerID == ui.GetServerId())
+            bool belogsHere = uid >= minUID && uid <= maxUID;
+            if (belogsHere)
             {
 
                 GetReadLock();
@@ -148,11 +160,17 @@ namespace SlaveServer
             {
                 ui.Invoke(ui.cDelegate, "Create PadiInt> PadiInt id: " + uid.ToString() + " isn't in this server.");
 
-                IServer server = (IServer)Activator.GetObject(
-                typeof(IServer),
-                GetServerById(targetServerID));
+                IMasterServer m = (IMasterServer)Activator.GetObject(
+                typeof(IMasterServer),
+                servers[0]);
+                string targetLocal = m.GetServerLocalForPadInt(uid);
 
-                return server.CreatePadiInt(txNumber, uid);
+
+                IServer s = (IServer)Activator.GetObject(
+                    typeof(IServer),
+                    targetLocal);
+
+                return s.CreatePadiInt(txNumber, uid);
             }
         }
 
@@ -161,8 +179,8 @@ namespace SlaveServer
         PadInt IServer.AccessPadiInt(int txNumber, int uid)
         {
             CheckState();
-            int targetServerID = uid % MAX_NUM_SERVERS;
-            if (targetServerID == ui.GetServerId())
+            bool belogsHere = uid >= minUID && uid <= maxUID;
+            if (belogsHere)
             {
 
                 GetReadLock();
@@ -184,12 +202,17 @@ namespace SlaveServer
             else
             {
                 ui.Invoke(ui.cDelegate, "Access PadiInt> PadiInt id: " + uid.ToString() + " isn't in this server.");
+                IMasterServer m = (IMasterServer)Activator.GetObject(
+                typeof(IMasterServer),
+                servers[0]);
+                string targetLocal = m.GetServerLocalForPadInt(uid);
 
-                IServer server = (IServer)Activator.GetObject(
-                typeof(IServer),
-                GetServerById(targetServerID));
 
-                return server.AccessPadiInt(txNumber, uid);
+                IServer s = (IServer)Activator.GetObject(
+                    typeof(IServer),
+                    targetLocal);
+
+                return s.AccessPadiInt(txNumber, uid);
             }
         }
 
@@ -197,9 +220,8 @@ namespace SlaveServer
         {
             CheckState();
             int uid = padiInt.GetUid();
-            int targetServerID = uid % MAX_NUM_SERVERS;
-
-            if (targetServerID == ui.GetServerId())
+            bool belogsHere = uid >= minUID && uid <= maxUID;
+            if (belogsHere)
             {
                 if (transactions[txNumber].Contains(padiInt))
                 {
@@ -213,7 +235,10 @@ namespace SlaveServer
             {
                 ui.Invoke(ui.cDelegate, "Try> PadiInt id: " + uid.ToString() + " isn't in this server.");
 
-                string serverLocal = GetServerById(targetServerID);
+                IMasterServer m = (IMasterServer)Activator.GetObject(
+                    typeof(IMasterServer),
+                    servers[0]);
+                string serverLocal = m.GetServerLocalForPadInt(uid);
 
                 IServer server = (IServer)Activator.GetObject(
                 typeof(IServer),

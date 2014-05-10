@@ -192,7 +192,7 @@ namespace PADI_DSTM
         {
 
             channel = new TcpChannel(port);
-            ChannelServices.RegisterChannel(channel, true);
+            ChannelServices.RegisterChannel(channel, false);
             ConnectToSystem();
 
             return true;
