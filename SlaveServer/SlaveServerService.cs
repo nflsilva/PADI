@@ -26,8 +26,17 @@ namespace SlaveServer
         private bool isRunning;     //state flag
         private bool fail;          //state flag for fail
 
+        public bool pingRunning;
+
+        private string nextServerLocal = "";
+        private IServer nextServer = null;
+
+        private int minUID;
+        private int maxUID;
 
         private static SlaveUI ui;
+        private Thread workerThread;
+
 
         public SlaveServerService(SlaveUI nui)
         {
@@ -36,20 +45,85 @@ namespace SlaveServer
             isWriting = false;
             isReading = false;
             isRunning = true;
+            pingRunning = false;
             fail = false;
             padiInts = new Dictionary<int, PadInt>();
             servers = new Dictionary<int, string>();
             transactions = new Dictionary<int, List<PadInt>>();
             participants = new Dictionary<int, List<string>>();
 
+            minUID = 0;
+            maxUID = 0;
+
             servers.Add(0, "tcp://localhost:8086/MasterService");
+
+            workerThread = new Thread(PingNext);
+            workerThread.Start();
         }
+
+        #region ring
+        public void PingNext()
+        {
+            while (true)
+            {
+                if (pingRunning)
+                {
+                    try
+                    {
+                        nextServer = (IServer)Activator.GetObject(
+                            typeof(IServer),
+                            nextServerLocal);
+                        nextServer.Ping(ui.GetServerId());
+                    }
+                    catch (Exception)
+                    {
+                        IMasterServer m = (IMasterServer)Activator.GetObject(
+                            typeof(IMasterServer),
+                            servers[0]);
+                        nextServerLocal = m.AddDeadServer(nextServerLocal, ui.GetServerLocal());
+                        ui.Invoke(ui.cDelegate, "Server " + nextServerLocal + " doesn't responde. New next is: " + nextServerLocal);
+                    }
+                }
+                Thread.Sleep(1000);
+            }
+        }
+
+        public void SetNextServer(string local)
+        {
+            nextServerLocal = local;
+            pingRunning = true;
+        }
+
+
+        public string GetNextServer()
+        {
+            return nextServerLocal;
+        }
+        string IServer.EnterRing(string local)
+        {
+            string response = nextServerLocal;
+            SetNextServer(local + "/Server");
+            IMasterServer m = (IMasterServer)Activator.GetObject(
+                typeof(IMasterServer),
+                servers[0]);
+            m.RegisterNext(ui.GetServerId(), nextServerLocal);
+            return response;
+        }
+
+        #endregion
 
         #region pad int
 
         PadInt IServer.CreatePadiInt(int txNumber, int uid)
         {
             CheckState();
+            nextServer = null;
+            nextServer = (IServer)Activator.GetObject(
+                typeof(IServer),
+                nextServerLocal);
+            nextServer.Ping(ui.GetServerId());
+
+
             int targetServerID = uid % MAX_NUM_SERVERS;
             if (targetServerID == ui.GetServerId())
             {
@@ -308,6 +382,10 @@ namespace SlaveServer
         #endregion
 
         #region nodes
+
+
+
+
         string IServer.GetServerLocal(int id)
         {
             CheckState();
@@ -354,7 +432,6 @@ namespace SlaveServer
 
         bool IServer.Fail()
         {
-            ;
             CheckState();
             fail = true;
             return true;
@@ -372,6 +449,12 @@ namespace SlaveServer
         {
             isRunning = true;
             fail = false;
+            return true;
+        }
+
+        bool IServer.Ping(int nid)
+        {
+            ui.Invoke(ui.cDelegate, "Ping from server ID: " + nid.ToString());
             return true;
         }
         #endregion

@@ -16,15 +16,17 @@ namespace MasterServer
 
 
 
-        private Dictionary<int, PadInt> padiInts;              //this will hold the PadiIntObjects
+        private Dictionary<int, PadInt> padiInts;               //this will hold the PadiIntObjects
         private Dictionary<int, string> servers;                //this will hold the servers locals;
-        private Dictionary<int, List<PadInt>> transactions;    //this will hold the objects to be commited in this server in each transaction;
+        private Dictionary<int, List<PadInt>> transactions;     //this will hold the objects to be commited in this server in each transaction;
         private Dictionary<int, List<string>> participants;     //this will hold the participants in each transacions;
+        private Dictionary<int, string> deadServers;            //this will hold the dead servers on the ring, so the intervals stay balanced 
+        private Dictionary<int, string> pairs;   
 
         private static MasterUI ui;
+        private Thread workerThread;
         private int txNumber;
         private int nextAvailableID;
-
         private int nextAvailableServer;
 
         private bool isWriting;     //flags for padiInts locks
@@ -33,6 +35,18 @@ namespace MasterServer
 
         private bool isRunning;     //state flag
         private bool fail;          //state flag for fail
+
+        private bool pingRunning;
+
+        private string nextServerLocal = "";
+        private IServer nextServer = null;
+
+        private int minUID;
+        private int maxUID;
+
+        private int longerIntervalIndex = 0;
+        private int expnent = 0;
+
 
         public MasterServerService(MasterUI nui)
         {
@@ -43,15 +57,84 @@ namespace MasterServer
             isWriting = false;
             isReading = false;
             isRunning = true;
+            pingRunning = false;
             isAccessingTxNumber = false;
             fail = false;
             padiInts = new Dictionary<int, PadInt>();
             servers = new Dictionary<int, string>();
             transactions = new Dictionary<int, List<PadInt>>();
             participants = new Dictionary<int, List<string>>();
+            deadServers = new Dictionary<int, string>();
+            pairs = new Dictionary<int, string>();
             servers.Add(0, "tcp://localhost:8086/MasterService");
+            SetNextServer(servers[0]);
+
+            workerThread = new Thread(PingNext);
+            workerThread.Start();
+
         }
 
+        #region ring
+        public void PingNext()
+        {
+            while (true)
+            {
+                if (pingRunning)
+                {
+                    try
+                    {
+                        nextServer = (IServer)Activator.GetObject(
+                            typeof(IServer),
+                            nextServerLocal);
+                        nextServer.Ping(ui.GetServerId());
+                    }
+                    catch (Exception)
+                    {
+                        IMasterServer m = (IMasterServer)Activator.GetObject(
+                            typeof(IMasterServer),
+                            servers[0]);
+                        nextServerLocal = m.AddDeadServer(nextServerLocal, servers[0]);
+                        ui.Invoke(ui.cDelegate, "Server " + nextServerLocal + " doesn't responde. New next is: " + nextServerLocal);
+                    }
+                    Thread.Sleep(1000);
+                }
+            }
+        }
+
+        string IServer.EnterRing(string local)
+        {
+            string response = nextServerLocal;
+            SetNextServer(local + "/Server");
+            IMasterServer m = (IMasterServer)Activator.GetObject(
+                 typeof(IMasterServer),
+                 servers[0]);
+            m.RegisterNext(ui.GetServerId(), nextServerLocal);
+
+            return response;
+        }
+        private string GetNodeWithLongerInterval()
+        {
+            string result;
+
+            if (longerIntervalIndex == Math.Pow(2, expnent))
+            {
+                longerIntervalIndex = 0;
+                expnent++;
+            }
+            result = servers[longerIntervalIndex];
+            longerIntervalIndex++;
+
+            return result;
+        }
+        public void SetNextServer(string local)
+        {
+            nextServerLocal = local;
+            pingRunning = true;
+        }
+
+
+
+        #endregion
 
         #region locks
 
@@ -133,8 +216,13 @@ namespace MasterServer
         PadInt IServer.CreatePadiInt(int txNumber, int uid)
         {
             CheckState();
+            nextServer = null;
+            nextServer = (IServer)Activator.GetObject(
+                typeof(IServer),
+                nextServerLocal);
+            nextServer.Ping(ui.GetServerId());
 
-            int targetServerID = uid % MAX_NUM_SERVERS;
+            int targetServerID = uid % servers.Count;
             if (targetServerID == ui.GetServerId())
             {
                 GetReadLock();
@@ -442,7 +530,12 @@ namespace MasterServer
         bool IServer.Fail()
         {
             CheckState();
-            fail = true;
+            //fail = true;
+            return true;
+        }
+        bool IServer.Ping(int nid)
+        {
+            ui.Invoke(ui.cDelegate, "Ping from " + nid.ToString());
             return true;
         }
 
@@ -466,32 +559,6 @@ namespace MasterServer
         int IMasterServer.GetTxNumber()
         {
             CheckState();
-            /*
-            int returnTxNumber = 0;
-            Monitor.Enter(txNumber);
-            {
-                if (isAccessingTxNumber)
-                {
-                    try
-                    {
-                        Monitor.Wait(txNumber);
-                    }
-                    catch (SynchronizationLockException e)
-                    {
-                        ui.Invoke(ui.cDelegate, "SycExcception");
-                    }
-                    catch (ThreadInterruptedException e)
-                    {
-                        ui.Invoke(ui.cDelegate, "IntExcception");
-                    }
-                }
-                isAccessingTxNumber = true;
-                returnTxNumber = txNumber++;
-                isAccessingTxNumber = false;
-            }
-            Monitor.Exit(txNumber);
-
-            return returnTxNumber;*/
             return txNumber++;
         }
 
@@ -503,24 +570,67 @@ namespace MasterServer
             return reps;
         }
 
-        int IMasterServer.Register(string slocal)
+        string[] IMasterServer.Register(string slocal)
         {
             CheckState();
-            int sid = nextAvailableID++;
+            string[] response = new string[2];
+            int sid;
+            string next;
+
+            if (deadServers.Count > 0)
+            {
+                sid = deadServers.Keys.Min();
+                next = deadServers[sid];
+                deadServers.Remove(sid);
+
+            } else {
+                sid = nextAvailableID++;
+                next = GetNodeWithLongerInterval();
+            }
 
             servers.Add(sid, slocal + "/Server");
             ui.Invoke(ui.cDelegate, "Registered server id: " + sid.ToString() + " located at: " + servers[sid]);
-            return sid;
+            response[0] = sid.ToString();
+            response[1] = next;
+
+            return response;
         }
         bool IMasterServer.Unregister(int sid)
         {
             CheckState();
-            if (servers.Remove(sid))
-            {
-                ui.Invoke(ui.cDelegate, "Removed server id: " + sid.ToString());
-                return true;
+            ui.Invoke(ui.cDelegate, "Removed server id: " + sid.ToString());
+            return true;
+        }
+
+        string IMasterServer.AddDeadServer(string deadLocal, string local)
+        {
+            CheckState();
+            int sid = 0;
+            foreach(KeyValuePair<int, string> entry in servers){
+                if (entry.Value.Equals(deadLocal))
+                {
+                    sid = entry.Key;
+                    break;
+                }
             }
-            return false;
+            if (!deadServers.ContainsKey(sid))
+            {
+                deadServers.Add(sid, local);
+            }
+            servers.Remove(sid);
+            return pairs[sid];
+
+        }
+
+        bool IMasterServer.RegisterNext(int sid, string nextLocal)
+        {
+            CheckState();
+            if (pairs.ContainsKey(sid))
+            {
+                pairs.Remove(sid);
+            }
+            pairs.Add(sid, nextLocal);
+            return true;
         }
         #endregion
 

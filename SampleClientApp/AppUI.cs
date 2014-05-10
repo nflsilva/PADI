@@ -217,11 +217,12 @@ namespace SampleClientApp
 
         private void button1_Click_1(object sender, EventArgs e)
         {
+            /*
             if (!URI_PATTERN.IsMatch(ServerLocalBox.Text))
             {
                 MessageBox.Show(URI_WARNING);
                 return;
-            }
+            }*/
             PadiDstm.Fail(ServerLocalBox.Text);
         }
 

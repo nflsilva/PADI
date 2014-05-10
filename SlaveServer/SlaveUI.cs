@@ -67,6 +67,10 @@ namespace SlaveServer
         {
             return SLAVE_SERVER_ID;
         }
+        public string GetServerLocal()
+        {
+            return SLAVE_SERVER_LOCAL + "/Server";
+        }
 
         public void AppendTextBoxMethod(string text)
         {
@@ -157,11 +161,12 @@ namespace SlaveServer
             ChannelServices.UnregisterChannel(channel);
             RemotingServices.Disconnect(sss);
             isRunning = false;
+            sss.pingRunning = false;
             return true;
         }
         private bool RegisterOnMaster()
         {
-            int response = -1;
+            string[] response;
             master = (IMasterServer)Activator.GetObject(
                 typeof(IMasterServer),
                 MASTER_SERVER_LOCAL);
@@ -174,14 +179,18 @@ namespace SlaveServer
                 System.Windows.Forms.MessageBox.Show("Error: Couldnt find master server");
                 return false;
             }
-            if (response>0)
+            if (Convert.ToInt32(response[0])>0)
             {
-                SLAVE_SERVER_ID = response;
-                AppendTextBoxMethod("Registered on master :). My ID is " + response.ToString());
+                SLAVE_SERVER_ID = Convert.ToInt32(response[0]);
+
+                IServer sserver = (IServer)Activator.GetObject(
+                    typeof(IServer),
+                    response[1]);
+
+                sss.SetNextServer(sserver.EnterRing(SLAVE_SERVER_LOCAL));
+                master.RegisterNext(SLAVE_SERVER_ID, sss.GetNextServer());
                 return true;
             }
-
-            AppendTextBoxMethod("Couldn't register on master :(. The choosen id is already taken.");
             CloseChannel();
             return false;
         }

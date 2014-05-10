@@ -9,9 +9,11 @@ namespace Shared
 {
     public interface IMasterServer : IServer
     {
-        int Register(string slocal);
+        string[] Register(string slocal);
         bool Unregister(int sid);
         string GetAvailableServer();
         int GetTxNumber();
+        bool RegisterNext(int sid, string nextLocal);
+        string AddDeadServer(string deadLocal, string local);
     }
 }

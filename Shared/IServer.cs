@@ -18,9 +18,11 @@ namespace Shared
         bool TxCommit(int txNumber);
         bool TxAbort(int txNumber);
         string GetServerLocal(int id);
+        string EnterRing(string local);
         bool Status();
         bool Fail();
         bool Freeze();
         bool Recover();
+        bool Ping(int id);
     }
 }
