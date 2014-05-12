@@ -23,7 +23,7 @@ namespace SampleClientApp
         private String ID_WARNING = "Invalid ID value! \r\nCan consist of numbers only. Cannot be empty";
         private Regex VALUE_PATTERN = new Regex("[0-9]+");
         private String VALUE_WARNING = "Invalid value! \r\nCan consist of numbers only. Cannot be empty";
-        private Regex URI_PATTERN = new Regex("(tcp)(:)(\\/)(\\/)(localhost)(:)[0-9]+(\\/)(server-[0-9])");
+        private Regex URI_PATTERN = new Regex("(tcp)(:)(\\/)(\\/)(localhost)(:)[0-9]+(\\/)(Server)");
         private String URI_WARNING = "Invalid URI. Format: tcp://localhost:xxxx/server-x)\r\nNB: May be found on interface of Master";
 
         public delegate void ChangeTextBox(string text);
@@ -32,30 +32,15 @@ namespace SampleClientApp
         public AppUI()
         {
             InitializeComponent();
+            this.masterPortBox.Text = "2000";
+            this.clientPortBox.Text = "4000";
         }
 
         private void connectButton_Click(object sender, EventArgs e)
         {
             startTxButton.Enabled = true;
-            if (clientPortBox.Text == "" && masterPortBox.Text =="")
-            {
-                DialogResult dialogResult = MessageBox.Show("Are you sure you want to use default values? \r\n" +
-                    "Client port: 8090\r\nMaster port: 8086", "PADI-DSTM", MessageBoxButtons.YesNo);
-                if (dialogResult == DialogResult.Yes)
-                {
-                    clientPortBox.Text = "8090";
-                    masterPortBox.Text = "8086";
-                    PadiDstm.Init();
-                }
-                else if (dialogResult == DialogResult.No)
-                {
-                    return;
-                }
-            }
-            else
-            {
-                PadiDstm.Init(Convert.ToInt32(clientPortBox.Text));
-            }
+            PadiDstm.Init();
+
         }
 
         public void AppendTextBoxMethod(string text)
@@ -217,12 +202,11 @@ namespace SampleClientApp
 
         private void button1_Click_1(object sender, EventArgs e)
         {
-            /*
             if (!URI_PATTERN.IsMatch(ServerLocalBox.Text))
             {
                 MessageBox.Show(URI_WARNING);
                 return;
-            }*/
+            }
             PadiDstm.Fail(ServerLocalBox.Text);
         }
 

@@ -41,6 +41,10 @@
             this.label5 = new System.Windows.Forms.Label();
             this.minPadIntBox = new System.Windows.Forms.TextBox();
             this.maxPadIntBox = new System.Windows.Forms.TextBox();
+            this.intBox = new System.Windows.Forms.TextBox();
+            this.repBox = new System.Windows.Forms.TextBox();
+            this.label6 = new System.Windows.Forms.Label();
+            this.label7 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // mainPanel
@@ -50,7 +54,7 @@
             this.mainPanel.Name = "mainPanel";
             this.mainPanel.ReadOnly = true;
             this.mainPanel.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.mainPanel.Size = new System.Drawing.Size(441, 201);
+            this.mainPanel.Size = new System.Drawing.Size(315, 201);
             this.mainPanel.TabIndex = 0;
             // 
             // startButton
@@ -155,11 +159,53 @@
             this.maxPadIntBox.Size = new System.Drawing.Size(37, 20);
             this.maxPadIntBox.TabIndex = 12;
             // 
+            // intBox
+            // 
+            this.intBox.Enabled = false;
+            this.intBox.Location = new System.Drawing.Point(335, 79);
+            this.intBox.Multiline = true;
+            this.intBox.Name = "intBox";
+            this.intBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.intBox.Size = new System.Drawing.Size(63, 182);
+            this.intBox.TabIndex = 13;
+            // 
+            // repBox
+            // 
+            this.repBox.Enabled = false;
+            this.repBox.Location = new System.Drawing.Point(404, 79);
+            this.repBox.Multiline = true;
+            this.repBox.Name = "repBox";
+            this.repBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.repBox.Size = new System.Drawing.Size(63, 182);
+            this.repBox.TabIndex = 14;
+            // 
+            // label6
+            // 
+            this.label6.AutoSize = true;
+            this.label6.Location = new System.Drawing.Point(333, 63);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(43, 13);
+            this.label6.TabIndex = 15;
+            this.label6.Text = "PadInts";
+            // 
+            // label7
+            // 
+            this.label7.AutoSize = true;
+            this.label7.Location = new System.Drawing.Point(401, 63);
+            this.label7.Name = "label7";
+            this.label7.Size = new System.Drawing.Size(48, 13);
+            this.label7.TabIndex = 16;
+            this.label7.Text = "Replicas";
+            // 
             // SlaveUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(465, 273);
+            this.ClientSize = new System.Drawing.Size(472, 273);
+            this.Controls.Add(this.label7);
+            this.Controls.Add(this.label6);
+            this.Controls.Add(this.repBox);
+            this.Controls.Add(this.intBox);
             this.Controls.Add(this.maxPadIntBox);
             this.Controls.Add(this.minPadIntBox);
             this.Controls.Add(this.label5);
@@ -195,5 +241,9 @@
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.TextBox minPadIntBox;
         private System.Windows.Forms.TextBox maxPadIntBox;
+        private System.Windows.Forms.TextBox intBox;
+        private System.Windows.Forms.TextBox repBox;
+        private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.Label label7;
     }
 }

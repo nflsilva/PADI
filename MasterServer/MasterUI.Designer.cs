@@ -37,6 +37,10 @@
             this.minPadIntBox = new System.Windows.Forms.TextBox();
             this.label5 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
+            this.label7 = new System.Windows.Forms.Label();
+            this.label6 = new System.Windows.Forms.Label();
+            this.repBox = new System.Windows.Forms.TextBox();
+            this.intBox = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
             // mainPanel
@@ -46,7 +50,7 @@
             this.mainPanel.Name = "mainPanel";
             this.mainPanel.ReadOnly = true;
             this.mainPanel.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.mainPanel.Size = new System.Drawing.Size(450, 199);
+            this.mainPanel.Size = new System.Drawing.Size(308, 199);
             this.mainPanel.TabIndex = 0;
             // 
             // StartButton
@@ -92,7 +96,6 @@
             this.maxPadIntBox.Name = "maxPadIntBox";
             this.maxPadIntBox.Size = new System.Drawing.Size(37, 20);
             this.maxPadIntBox.TabIndex = 20;
-            this.maxPadIntBox.TextChanged += new System.EventHandler(this.maxPadIntBox_TextChanged);
             // 
             // minPadIntBox
             // 
@@ -101,7 +104,6 @@
             this.minPadIntBox.Name = "minPadIntBox";
             this.minPadIntBox.Size = new System.Drawing.Size(37, 20);
             this.minPadIntBox.TabIndex = 19;
-            this.minPadIntBox.TextChanged += new System.EventHandler(this.minPadIntBox_TextChanged);
             // 
             // label5
             // 
@@ -111,7 +113,6 @@
             this.label5.Size = new System.Drawing.Size(10, 13);
             this.label5.TabIndex = 18;
             this.label5.Text = "-";
-            this.label5.Click += new System.EventHandler(this.label5_Click);
             // 
             // label4
             // 
@@ -121,11 +122,52 @@
             this.label4.Size = new System.Drawing.Size(71, 13);
             this.label4.TabIndex = 17;
             this.label4.Text = "PadInt range:";
-            this.label4.Click += new System.EventHandler(this.label4_Click);
+            // 
+            // label7
+            // 
+            this.label7.AutoSize = true;
+            this.label7.Location = new System.Drawing.Point(398, 63);
+            this.label7.Name = "label7";
+            this.label7.Size = new System.Drawing.Size(48, 13);
+            this.label7.TabIndex = 24;
+            this.label7.Text = "Replicas";
+            // 
+            // label6
+            // 
+            this.label6.AutoSize = true;
+            this.label6.Location = new System.Drawing.Point(330, 63);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(43, 13);
+            this.label6.TabIndex = 23;
+            this.label6.Text = "PadInts";
+            // 
+            // repBox
+            // 
+            this.repBox.Enabled = false;
+            this.repBox.Location = new System.Drawing.Point(401, 79);
+            this.repBox.Multiline = true;
+            this.repBox.Name = "repBox";
+            this.repBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.repBox.Size = new System.Drawing.Size(63, 182);
+            this.repBox.TabIndex = 22;
+            // 
+            // intBox
+            // 
+            this.intBox.Enabled = false;
+            this.intBox.Location = new System.Drawing.Point(332, 79);
+            this.intBox.Multiline = true;
+            this.intBox.Name = "intBox";
+            this.intBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.intBox.Size = new System.Drawing.Size(63, 182);
+            this.intBox.TabIndex = 21;
             // 
             // MasterUI
             // 
             this.ClientSize = new System.Drawing.Size(478, 273);
+            this.Controls.Add(this.label7);
+            this.Controls.Add(this.label6);
+            this.Controls.Add(this.repBox);
+            this.Controls.Add(this.intBox);
             this.Controls.Add(this.maxPadIntBox);
             this.Controls.Add(this.minPadIntBox);
             this.Controls.Add(this.label5);
@@ -137,7 +179,6 @@
             this.Controls.Add(this.mainPanel);
             this.Name = "MasterUI";
             this.Text = "Master Interface";
-            this.Load += new System.EventHandler(this.MasterUI_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -154,6 +195,10 @@
         private System.Windows.Forms.TextBox minPadIntBox;
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.Label label7;
+        private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.TextBox repBox;
+        private System.Windows.Forms.TextBox intBox;
 
     }
 }

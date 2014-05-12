@@ -24,9 +24,10 @@ namespace Shared
         bool Freeze();
         bool Recover();
         bool Ping(int id);
-
         int[] Split();
-
-
+        List<PadInt> GetSplitedObjects();
+        List<PadInt> GetReplicatedList();
+        bool ReplicateList(List<PadInt> padList, bool appendList);
+        bool UpdateReplica(int uid, PadInt pInt);
     }
 }

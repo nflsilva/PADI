@@ -18,7 +18,9 @@ namespace MasterServer
         private Dictionary<int, List<string>> participants;     //this will hold the participants in each transacions;
         private Dictionary<int, string> deadServers;            //this will hold the dead servers on the ring, so the intervals stay balanced; 
         private Dictionary<int, string> pairs;                  //this will hold the pairs of each edge of the ring. Its used to recover the ring;
-        private Dictionary<int, Tuple<int, int>> ranges;        //this will hold the range of each node of the ring. Used for routing ;
+        private Dictionary<int, Tuple<int, int>> ranges;        //this will hold the range of each node of the ring. Used for routing;
+        private Dictionary<int, PadInt> replicas;               //this will hold the replicated objects from prev server;
+
 
         private static MasterUI ui;
         private Thread workerThread;
@@ -66,9 +68,10 @@ namespace MasterServer
             deadServers = new Dictionary<int, string>();
             pairs = new Dictionary<int, string>();
             ranges = new Dictionary<int, Tuple<int, int>>();
+            replicas = new Dictionary<int, PadInt>();
             ranges.Add(0, new Tuple<int, int>(minUID, maxUID));
 
-            servers.Add(0, "tcp://localhost:8086/MasterService");
+            servers.Add(0, "tcp://localhost:2000/Server");
             SetNextServer(servers[0]);
 
             workerThread = new Thread(PingNext);
@@ -76,7 +79,69 @@ namespace MasterServer
 
         }
 
+
+        #region replication
+
+        List<PadInt> IServer.GetReplicatedList()
+        {
+            List<PadInt> list = new List<PadInt>();
+            foreach (PadInt p in replicas.Values)
+            {
+                list.Add(p);
+            }
+            return list;
+        }
+        bool IServer.ReplicateList(List<PadInt> padList, bool appendList)
+        {
+            if (!appendList)
+            {
+                replicas.Clear();
+            }
+            foreach (PadInt p in padList)
+            {
+                replicas.Add(p.GetUid(), p);
+            }
+            return true;
+        }
+        bool IServer.UpdateReplica(int uid, PadInt pInt)
+        {
+            if (!replicas.ContainsKey(uid))
+            {
+                replicas.Add(uid, null);
+            }
+            replicas[uid] = pInt;
+            return true;
+        }
+        public void AddPadInts(List<PadInt> padIntList)
+        {
+            foreach (PadInt p in padIntList)
+            {
+                padiInts.Add(p.GetUid(), p);
+            }
+        }
+
+        #endregion
+
         #region ring
+        List<PadInt> IServer.GetSplitedObjects()
+        {
+            List<PadInt> list = new List<PadInt>();
+            List<int> toRemove = new List<int>();
+            foreach (PadInt p in padiInts.Values)
+            {
+                if (p.GetUid() < minUID || p.GetUid() > maxUID)
+                {
+                    list.Add(p);
+                    toRemove.Add(p.GetUid());
+                }
+            }
+            foreach (int i in toRemove)
+            {
+                padiInts.Remove(i);
+            }
+
+            return list;
+        }
         bool IMasterServer.SplitRange(int myID, string targLocal)
         {
             int targID = GetIDByLocal(targLocal);
@@ -140,7 +205,6 @@ namespace MasterServer
             return "NOT FOUND :O";
         }
 
-
         public void PingNext()
         {
             while (true)
@@ -159,10 +223,27 @@ namespace MasterServer
                         IMasterServer m = (IMasterServer)Activator.GetObject(
                             typeof(IMasterServer),
                             servers[0]);
+
                         int[] new_range = m.JoinRange(ui.GetServerId(), nextServerLocal);
-                        nextServerLocal = m.AddDeadServer(nextServerLocal, servers[0]);
                         minUID = new_range[0];
                         maxUID = new_range[1];
+
+                        nextServerLocal = m.AddDeadServer(nextServerLocal, servers[0]);
+                        nextServer = (IServer)Activator.GetObject(
+                            typeof(IServer),
+                            nextServerLocal);
+
+                        List<PadInt> toAdd = nextServer.GetReplicatedList();
+
+                        List<PadInt> toReplicate = new List<PadInt>();
+                        foreach (PadInt p in padiInts.Values)
+                        {
+                            toReplicate.Add(p);
+                        }
+                        nextServer.ReplicateList(toReplicate, true);
+
+                        AddPadInts(toAdd);
+
                         ui.Invoke(ui.pDelegate, minUID, maxUID);
                         ui.Invoke(ui.cDelegate, "Server " + nextServerLocal + " doesn't responde. New next is: " + nextServerLocal);
                     }
@@ -179,6 +260,21 @@ namespace MasterServer
                  typeof(IMasterServer),
                  servers[0]);
             m.RegisterNext(ui.GetServerId(), nextServerLocal);
+
+            List<PadInt> toReplicate = new List<PadInt>();
+            foreach (PadInt p in padiInts.Values)
+            {
+                if (p.GetUid() >= minUID && p.GetUid() <= maxUID)
+                {
+                     toReplicate.Add(p);
+                }
+
+            }
+            IServer s = (IServer)Activator.GetObject(
+                typeof(IServer),
+                local + "/Server");
+            s.ReplicateList(toReplicate, false);
+
 
             return response;
         }
@@ -212,8 +308,6 @@ namespace MasterServer
 
             return resp;
         }
-
-
 
         #endregion
 
@@ -532,6 +626,14 @@ namespace MasterServer
                 npint = new PadInt(pint.GetUid(), pint.GetVersion() + 1);
                 npint.Write(pint.Read());
                 padiInts.Add(pint.GetUid(), npint);
+
+                nextServer = (IServer)Activator.GetObject(
+                    typeof(IServer),
+                    nextServerLocal);
+                nextServer.UpdateReplica(pint.GetUid(), pint);
+
+                ui.Invoke(ui.intDelegate, new List<PadInt>(padiInts.Values));
+                ui.Invoke(ui.repDelegate, new List<PadInt>(replicas.Values));
             }
             FreeWriteLock();
             transactions.Remove(txNumber);

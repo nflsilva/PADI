@@ -11,10 +11,11 @@ namespace SlaveServer
 
     class SlaveServerService : MarshalByRefObject, IServer
     {
-        private Dictionary<int, PadInt> padiInts;              //this will hold the PadiIntObjects
+        private Dictionary<int, PadInt> padiInts;               //this will hold the PadiIntObjects
         private Dictionary<int, string> servers;                //this will hold the servers locals;
-        private Dictionary<int, List<PadInt>> transactions;    //this will hold the objects to be commited in this server in each transaction;
+        private Dictionary<int, List<PadInt>> transactions;     //this will hold the objects to be commited in this server in each transaction;
         private Dictionary<int, List<string>> participants;     //this will hold the participants in each transacions;
+        private Dictionary<int, PadInt> replicas;               //this will hold the replicated objects from prev server;
 
         private int txNumber;
 
@@ -48,18 +49,81 @@ namespace SlaveServer
             servers = new Dictionary<int, string>();
             transactions = new Dictionary<int, List<PadInt>>();
             participants = new Dictionary<int, List<string>>();
+            replicas = new Dictionary<int, PadInt>();
 
             minUID = 0;
             maxUID = 0;
 
-            servers.Add(0, "tcp://localhost:8086/MasterService");
+            servers.Add(0, "tcp://localhost:2000/Server");
 
             workerThread = new Thread(PingNext);
             workerThread.Start();
         }
 
 
+        #region replication
+
+        List<PadInt> IServer.GetReplicatedList()
+        {
+            List<PadInt> list = new List<PadInt>();
+            foreach (PadInt p in replicas.Values)
+            {
+                list.Add(p);
+            }
+            return list;
+        }
+        bool IServer.ReplicateList(List<PadInt> padList, bool appendList)
+        {
+            if (!appendList)
+            {
+                replicas.Clear();
+            }
+            foreach (PadInt p in padList)
+            {
+                replicas.Add(p.GetUid(), p);
+            }
+            return true;
+        }
+        bool IServer.UpdateReplica(int uid, PadInt pInt)
+        {
+            if (!replicas.ContainsKey(uid))
+            {
+                replicas.Add(uid, null);
+            }
+            replicas[uid] = pInt;
+            return true;
+        }
+
+        public void AddPadInts(List<PadInt> padIntList)
+        {
+            foreach (PadInt p in padIntList)
+            {
+                padiInts.Add(p.GetUid(), p);
+            }
+        }
+
+        #endregion
+
         #region ring
+        List<PadInt> IServer.GetSplitedObjects()
+        {
+            List<PadInt> list = new List<PadInt>();
+            List<int> toRemove = new List<int>();
+            foreach (PadInt p in padiInts.Values)
+            {
+                if (p.GetUid() < minUID || p.GetUid() > maxUID)
+                {
+                    list.Add(p);
+                    toRemove.Add(p.GetUid());
+                }
+            }
+            foreach (int i in toRemove)
+            {
+                padiInts.Remove(i);
+            }
+            return list;
+        }
+
         public void SetPadIntRange(int min, int max)
         {
             minUID = min;
@@ -83,10 +147,29 @@ namespace SlaveServer
                         IMasterServer m = (IMasterServer)Activator.GetObject(
                             typeof(IMasterServer),
                             servers[0]);
+
                         int[] new_range = m.JoinRange(ui.GetServerId(), nextServerLocal);
-                        nextServerLocal = m.AddDeadServer(nextServerLocal, ui.GetServerLocal());
                         minUID = new_range[0];
                         maxUID = new_range[1];
+
+                        nextServerLocal = m.AddDeadServer(nextServerLocal, ui.GetServerLocal());
+
+                        nextServer = (IServer)Activator.GetObject(
+                            typeof(IServer),
+                            nextServerLocal);
+
+                        List<PadInt> toAdd = nextServer.GetReplicatedList();
+
+
+                        List<PadInt> toReplicate = new List<PadInt>();
+                        foreach (PadInt p in padiInts.Values)
+                        {
+                            toReplicate.Add(p);
+                        }
+                        nextServer.ReplicateList(toReplicate, true);
+
+                        AddPadInts(toAdd);
+
                         ui.Invoke(ui.pDelegate, minUID, maxUID);
                         ui.Invoke(ui.cDelegate, "Server " + nextServerLocal + " doesn't responde. New next is: " + nextServerLocal);
                     }
@@ -114,6 +197,20 @@ namespace SlaveServer
                 typeof(IMasterServer),
                 servers[0]);
             m.RegisterNext(ui.GetServerId(), nextServerLocal);
+
+            List<PadInt> toReplicate = new List<PadInt>();
+            foreach (PadInt p in padiInts.Values)
+            {
+                if (p.GetUid() >= minUID && p.GetUid() <= maxUID)
+                {
+                    toReplicate.Add(p);
+                }
+            }
+            IServer s = (IServer)Activator.GetObject(
+                typeof(IServer),
+                local + "/Server");
+            s.ReplicateList(toReplicate, false);
+
             return response;
         }
         int[] IServer.Split()
@@ -173,9 +270,6 @@ namespace SlaveServer
                 return s.CreatePadiInt(txNumber, uid);
             }
         }
-
-        //This function corresponds to a read(); the txNumber will be here only for future use, in case of a change, but for an
-        //optimistic aprouch, this isn't used
         PadInt IServer.AccessPadiInt(int txNumber, int uid)
         {
             CheckState();
@@ -290,7 +384,6 @@ namespace SlaveServer
             return canCommit;
         }
 
-
         bool IServer.TryTxCommit(int txNumber)
         {
             CheckState();
@@ -346,8 +439,6 @@ namespace SlaveServer
             return true;
         }
 
-
-
         private bool CommitTx(int txNumber)
         {
             PadInt npint;
@@ -362,6 +453,14 @@ namespace SlaveServer
                 npint.Write(pint.Read());
                 padiInts.Add(pint.GetUid(), npint);
 
+                nextServer = (IServer)Activator.GetObject(
+                    typeof(IServer),
+                    nextServerLocal);
+                nextServer.UpdateReplica(pint.GetUid(), pint);
+
+                ui.Invoke(ui.intDelegate, new List<PadInt>(padiInts.Values));
+                ui.Invoke(ui.repDelegate, new List<PadInt>(replicas.Values));
+
             }
             FreeWriteLock();
             transactions.Remove(txNumber);
@@ -369,6 +468,7 @@ namespace SlaveServer
             ui.Invoke(ui.cDelegate, "TxCommit> Tx id: " + txNumber + " has been commited!");
             return true;
         }
+
         private bool AbortTx(int txNumber)
         {
             CheckState();
@@ -378,6 +478,7 @@ namespace SlaveServer
             ui.Invoke(ui.cDelegate, "TxAbort> Tx id: " + txNumber + " has been aborted!");
             return true;
         }
+
         int IServer.TxBegin()
         {
             CheckState();
@@ -407,10 +508,6 @@ namespace SlaveServer
         #endregion
 
         #region nodes
-
-
-
-
         string IServer.GetServerLocal(int id)
         {
             CheckState();

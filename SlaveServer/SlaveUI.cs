@@ -20,10 +20,10 @@ namespace SlaveServer
     {
 
         private static int SLAVE_SERVER_ID = 1;
-        private static int SLAVE_DEFAULT_PORT = 8085;
-        private static int MASTER_DEFAULT_PORT = 8086;
+        private static int SLAVE_DEFAULT_PORT = 2001;
+        private static int MASTER_DEFAULT_PORT = 2000;
         private static string INTRO_MSG = "Hello, Im a Slave Server!";
-        private static string MASTER_SERVER_LOCAL = "tcp://localhost:" + MASTER_DEFAULT_PORT.ToString() + "/MasterService";
+        private static string MASTER_SERVER_LOCAL = "tcp://localhost:" + MASTER_DEFAULT_PORT.ToString() + "/Server";
         private static string SLAVE_SERVER_NAME = "Server";
         private static string SLAVE_SERVER_LOCAL = "tcp://localhost:" + SLAVE_DEFAULT_PORT.ToString();
         private static string WARNING = "Incorrect input. Only numbers allowed.";
@@ -39,8 +39,12 @@ namespace SlaveServer
         private bool isRunning;
         public delegate void ChangeTextBox(string text);
         public delegate void ChangePadIntRange(int min, int max);
+        public delegate void UpdatePadInts(List<PadInt> pInts);
+        public delegate void UpdateRepInts(List<PadInt> pInts);
         public ChangeTextBox cDelegate;
         public ChangePadIntRange pDelegate;
+        public UpdatePadInts intDelegate;
+        public UpdateRepInts repDelegate;
 
         public SlaveUI()
         {
@@ -48,6 +52,8 @@ namespace SlaveServer
             isRunning = false;
             cDelegate = new ChangeTextBox(AppendTextBoxMethod);
             pDelegate = new ChangePadIntRange(ChangeInterval);
+            intDelegate = new UpdatePadInts(UpdateIntBox);
+            repDelegate = new UpdateRepInts(UpdateRepBox);
             mainPanel.Text = INTRO_MSG;
             masterPortBox.Text = MASTER_DEFAULT_PORT.ToString();
             slavePortBox.Text = SLAVE_DEFAULT_PORT.ToString();
@@ -58,6 +64,9 @@ namespace SlaveServer
         {
             InitializeComponent();
             cDelegate = new ChangeTextBox(AppendTextBoxMethod);
+            pDelegate = new ChangePadIntRange(ChangeInterval);
+            intDelegate = new UpdatePadInts(UpdateIntBox);
+            repDelegate = new UpdateRepInts(UpdateRepBox);
             this.master = master;
         }
 
@@ -80,7 +89,37 @@ namespace SlaveServer
             {
                 this.mainPanel.AppendText("\r\n" + text);
             }
+        }
 
+        public void UpdateIntBox(List<PadInt> pInts)
+        {
+            intBox.Text = "";
+            foreach (PadInt p in pInts)
+            {
+                if (this.intBox.Text.Length == 0)
+                {
+                    this.intBox.Text = p.GetUid() + "|" + p.Read() + "|" + p.GetVersion();
+                }
+                else
+                {
+                    this.intBox.AppendText("\r\n" + p.GetUid() + "|" + p.Read() + "|" + p.GetVersion());
+                }
+            }
+        }
+        public void UpdateRepBox(List<PadInt> pInts)
+        {
+            repBox.Text = "";
+            foreach (PadInt p in pInts)
+            {
+                if (this.repBox.Text.Length == 0)
+                {
+                    this.repBox.Text = p.GetUid() + "|" + p.Read() + "|" + p.GetVersion();
+                }
+                else
+                {
+                    this.repBox.AppendText("\r\n" + p.GetUid() + "|" + p.Read() + "|" + p.GetVersion());
+                }
+            }
         }
 
         public void ChangeInterval(int min, int max)
@@ -193,10 +232,19 @@ namespace SlaveServer
                 int[] range = sserver.Split();
                 master.SplitRange(SLAVE_SERVER_ID, response[1]);
                 sss.SetPadIntRange(range[0], range[1]);
-                this.ChangeInterval(range[0], range[1]);
+                ChangeInterval(range[0], range[1]);
 
                 sss.SetNextServer(sserver.EnterRing(SLAVE_SERVER_LOCAL));
                 master.RegisterNext(SLAVE_SERVER_ID, sss.GetNextServer());
+
+                List<PadInt> toAdd = sserver.GetSplitedObjects();
+                sss.AddPadInts(toAdd);
+
+                IServer ns = (IServer)Activator.GetObject(
+                    typeof(IServer),
+                    sss.GetNextServer());
+
+                ns.ReplicateList(toAdd, false);
                 return true;
             }
             CloseChannel();

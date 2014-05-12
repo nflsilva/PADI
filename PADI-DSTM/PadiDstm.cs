@@ -14,12 +14,10 @@ namespace PADI_DSTM
     public static class PadiDstm
     {
 
-        private static int APP_DEFAULT_PORT = 8090;
-        private static int MASTER_DEFAULT_PORT = 8086;
+        private static int APP_DEFAULT_PORT = 9000;
+        private static int MASTER_DEFAULT_PORT = 2000;
         private static string INTRO_MSG = "Hello, welcome to PADI-DSTM!";
-        private static string APP_SERVER_NAME = "ClientService";
-        private static string MASTER_SERVER_LOCAL = "tcp://localhost:" + MASTER_DEFAULT_PORT.ToString() + "/MasterService";
-        private static string APP_SERVER_LOCAL = "tcp://localhost:" + APP_DEFAULT_PORT.ToString() + "/" + APP_SERVER_NAME;
+        private static string MASTER_SERVER_LOCAL = "tcp://localhost:2000/Server";
 
         private static TcpChannel channel;
         private static IServer server;
@@ -31,11 +29,19 @@ namespace PADI_DSTM
 
         public static PadInt CreatePadInt(int uid)
         {
-            PadInt pint = server.CreatePadiInt(txNumber, uid);
+            PadInt pint = null;
+            try
+            {
+                pint = server.CreatePadiInt(txNumber, uid);
+            }
+            catch (Exception)
+            {
+                ConnectToSystem();
+                CreatePadInt(uid);
+            }
+
             if (pint != null)
             { 
-                //these two lines may lead to crash IF two creates are done one after another
-
                 if (!cache.ContainsKey(pint.GetUid()))
                 {
                     cache.Add(pint.GetUid(), pint);
@@ -68,14 +74,22 @@ namespace PADI_DSTM
 
         public static PadInt AccessPadInt(int uid)
         {
-            PadInt pint;
+            PadInt pint = null;
             if (cache.ContainsKey(uid))
             {
                 pint = cache[uid];
             }
             else
             {
-                pint = server.AccessPadiInt(txNumber, uid);
+                try
+                {
+                    pint = server.AccessPadiInt(txNumber, uid);
+                }
+                catch (Exception)
+                {
+                    ConnectToSystem();
+                    AccessPadInt(uid);
+                }
             }
 
             if (pint != null)
@@ -84,7 +98,6 @@ namespace PADI_DSTM
                 {
                     cache.Remove(pint.GetUid());
                 }
-                //these two lines may lead to crash IF two access are done one after another
                 if (!cache.ContainsKey(pint.GetUid()))
                 {
                     cache.Add(pint.GetUid(), pint);
@@ -106,27 +119,24 @@ namespace PADI_DSTM
         {
             cache = new Dictionary<int, PadInt>();
             dirty = new Dictionary<int, bool>();
-            try
-            {
-                return OpenChannel(APP_DEFAULT_PORT);
-            }
-            catch (SocketException) { 
-                Random rand = new Random();
-                return OpenChannel(APP_DEFAULT_PORT + rand.Next(1, 10));            
-            }
+            Random rand = new Random();
+            OpenChannel(APP_DEFAULT_PORT + rand.Next(1, 100));
+            return true;
         }
-
-        public static bool Init(int port)
-        {
-            cache = new Dictionary<int, PadInt>();
-            dirty = new Dictionary<int, bool>();
-
-            return OpenChannel(port);
-        }
-
         public static bool TxBegin()
         {
-            txNumber = server.TxBegin();
+
+            try
+            {
+                txNumber = server.TxBegin();
+            }
+            catch (RemotingException)
+            {
+                ConnectToSystem();
+                TxBegin();
+            }
+
+            
             if (txNumber == null)
             {
                 throw new TxException("Couldn't start transaction");
@@ -206,8 +216,6 @@ namespace PADI_DSTM
 
         private static bool ConnectToSystem()
         {
-
-            MASTER_SERVER_LOCAL = "tcp://localhost:" + MASTER_DEFAULT_PORT.ToString() + "/MasterService";
             IMasterServer master = (IMasterServer)Activator.GetObject(
                 typeof(IMasterServer),
                 MASTER_SERVER_LOCAL);
