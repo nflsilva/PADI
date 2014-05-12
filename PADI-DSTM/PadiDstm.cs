@@ -32,6 +32,7 @@ namespace PADI_DSTM
             try
             {
                 pint = server.CreatePadiInt(txNumber, uid);
+                pint.Write(pint.Read());
             }
             catch (Exception)
             {
@@ -257,8 +258,9 @@ namespace PADI_DSTM
             bool tryResp = false;
             foreach (PadInt pint in cache.Values)
             {
-                if (dirty[pint.GetUid()])
+                if (!pint.isClean())
                 {
+                    pint.SetClean();
                     tryResp = server.TryWrite(txNumber, pint);
                 }
             }

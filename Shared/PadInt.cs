@@ -14,6 +14,7 @@ namespace Shared
         private int uid;
         private int value;
         private int version;
+        private bool isDirty;
 
 
         public PadInt(int uid, int version)
@@ -21,6 +22,16 @@ namespace Shared
             this.uid = uid;
             this.value = 0;
             this.version = version;
+            this.isDirty = false;
+        }
+
+        public bool isClean()
+        {
+            return !this.isDirty;
+        }
+        public void SetClean()
+        {
+            this.isDirty = false;
         }
 
         public int GetUid()
@@ -36,6 +47,7 @@ namespace Shared
         public void Write(int value)
         {
             this.value = value;
+            this.isDirty = true;
         }
         public int GetVersion()
         {

@@ -14,7 +14,7 @@ namespace MasterServer
     public class MasterServerService : MarshalByRefObject, IMasterServer
     {
         private static int PING_DELAY = 2000;//ms
-        private static int PING_TIME_OUT = 5000;
+        private static int PING_TIME_OUT = 8000;
 
         private Dictionary<int, PadInt> padiInts;               //this will hold the PadiIntObjects
         private Dictionary<int, string> servers;                //this will hold the servers locals;
@@ -56,7 +56,7 @@ namespace MasterServer
         {
             ui = nui;
             minUID = 0;
-            maxUID = 1000;
+            maxUID = Int32.MaxValue;
             txNumber = 0;
             nextAvailableServer = 0;
             nextAvailableID = 1;
