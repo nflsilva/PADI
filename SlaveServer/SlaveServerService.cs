@@ -132,10 +132,43 @@ namespace SlaveServer
             minUID = min;
             maxUID = max;
         }
+
+        private void RecoverRing()
+        {
+            IMasterServer m = (IMasterServer)Activator.GetObject(
+                            typeof(IMasterServer),
+                            servers[0]);
+
+            int[] new_range = m.JoinRange(ui.GetServerId(), nextServerLocal);
+            minUID = new_range[0];
+            maxUID = new_range[1];
+
+            nextServerLocal = m.AddDeadServer(nextServerLocal, ui.GetServerLocal());
+
+            nextServer = (IServer)Activator.GetObject(
+                typeof(IServer),
+                nextServerLocal);
+
+            List<PadInt> toAdd = nextServer.GetReplicatedList();
+
+
+            List<PadInt> toReplicate = new List<PadInt>();
+            foreach (PadInt p in padiInts.Values)
+            {
+                toReplicate.Add(p);
+            }
+            nextServer.ReplicateList(toReplicate, true);
+
+            AddPadInts(toAdd);
+
+            ui.Invoke(ui.pDelegate, minUID, maxUID);
+            ui.Invoke(ui.cDelegate, "Server " + nextServerLocal + " doesn't responde. New next is: " + nextServerLocal);
+        }
         public void PingNext()
         {
             while (true)
             {
+                CheckState();
                 if (pingRunning)
                 {
                     try
@@ -147,37 +180,10 @@ namespace SlaveServer
                     }
                     catch (Exception)
                     {
-                        IMasterServer m = (IMasterServer)Activator.GetObject(
-                            typeof(IMasterServer),
-                            servers[0]);
-
-                        int[] new_range = m.JoinRange(ui.GetServerId(), nextServerLocal);
-                        minUID = new_range[0];
-                        maxUID = new_range[1];
-
-                        nextServerLocal = m.AddDeadServer(nextServerLocal, ui.GetServerLocal());
-
-                        nextServer = (IServer)Activator.GetObject(
-                            typeof(IServer),
-                            nextServerLocal);
-
-                        List<PadInt> toAdd = nextServer.GetReplicatedList();
-
-
-                        List<PadInt> toReplicate = new List<PadInt>();
-                        foreach (PadInt p in padiInts.Values)
-                        {
-                            toReplicate.Add(p);
-                        }
-                        nextServer.ReplicateList(toReplicate, true);
-
-                        AddPadInts(toAdd);
-
-                        ui.Invoke(ui.pDelegate, minUID, maxUID);
-                        ui.Invoke(ui.cDelegate, "Server " + nextServerLocal + " doesn't responde. New next is: " + nextServerLocal);
+                        RecoverRing();  
                     }
+                    Thread.Sleep(PING_DELAY);
                 }
-                Thread.Sleep(PING_DELAY);
             }
         }
 
@@ -312,7 +318,6 @@ namespace SlaveServer
                 return s.AccessPadiInt(txNumber, uid);
             }
         }
-
         bool IServer.TryWrite(int txNumber, PadInt padiInt)
         {
             CheckState();
@@ -538,7 +543,6 @@ namespace SlaveServer
                 return local;
             }
         }
-
         bool IServer.Status()
         {
             string state;
@@ -554,22 +558,18 @@ namespace SlaveServer
             ui.Invoke(ui.cDelegate, "Status> My current state is " + state);
             return true;
         }
-
         bool IServer.Fail()
         {
             CheckState();
             fail = true;
             return true;
         }
-
-
         bool IServer.Freeze()
         {
 
             isRunning = false;
             return true;
         }
-
         bool IServer.Recover()
         {
             isRunning = true;
@@ -579,6 +579,7 @@ namespace SlaveServer
 
         bool IServer.Ping(int nid)
         {
+            CheckState();
             ui.Invoke(ui.cDelegate, "Ping from server ID: " + nid.ToString());
             return true;
         }

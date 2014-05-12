@@ -4,14 +4,17 @@ using System.Linq;
 using System.Text;
 using Shared;
 using System.Windows.Forms;
+using System.Timers;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Runtime.Remoting;
 
 namespace MasterServer
 {
     public class MasterServerService : MarshalByRefObject, IMasterServer
     {
         private static int PING_DELAY = 2000;//ms
+        private static int PING_TIME_OUT = 5000;
 
         private Dictionary<int, PadInt> padiInts;               //this will hold the PadiIntObjects
         private Dictionary<int, string> servers;                //this will hold the servers locals;
@@ -47,6 +50,7 @@ namespace MasterServer
         private int longerIntervalIndex = 0;
         private int expnent = 0;
 
+        private System.Timers.Timer pingTimer;
 
         public MasterServerService(MasterUI nui)
         {
@@ -70,6 +74,13 @@ namespace MasterServer
             pairs = new Dictionary<int, string>();
             ranges = new Dictionary<int, Tuple<int, int>>();
             replicas = new Dictionary<int, PadInt>();
+
+            pingTimer = new System.Timers.Timer();
+            pingTimer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
+
+            pingTimer.Interval = PING_TIME_OUT;
+            pingTimer.Enabled = false;
+
             ranges.Add(0, new Tuple<int, int>(minUID, maxUID));
 
             servers.Add(0, "tcp://localhost:2000/Server");
@@ -206,47 +217,68 @@ namespace MasterServer
             return "NOT FOUND - SHOULD NEVER HAPPEN :O";
         }
 
+        private void OnTimedEvent(object source, ElapsedEventArgs e) {
+            ui.Invoke(ui.cDelegate, "TIMEOUT! - " + pingRunning.ToString());
+            workerThread.Interrupt();
+        }
+
+        public void RecoverRing() {
+            IMasterServer m = (IMasterServer)Activator.GetObject(
+               typeof(IMasterServer),
+               servers[0]);
+
+            int[] new_range = m.JoinRange(ui.GetServerId(), nextServerLocal);
+            minUID = new_range[0];
+            maxUID = new_range[1];
+
+            nextServerLocal = m.AddDeadServer(nextServerLocal, servers[0]);
+            nextServer = (IServer)Activator.GetObject(
+                typeof(IServer),
+                nextServerLocal);
+
+            List<PadInt> toAdd = nextServer.GetReplicatedList();
+
+            List<PadInt> toReplicate = new List<PadInt>();
+            foreach (PadInt p in padiInts.Values)
+            {
+                toReplicate.Add(p);
+            }
+            nextServer.ReplicateList(toReplicate, true);
+
+            AddPadInts(toAdd);
+
+            ui.Invoke(ui.pDelegate, minUID, maxUID);
+            ui.Invoke(ui.cDelegate, "Server " + nextServerLocal + " doesn't responde. New next is: " + nextServerLocal);
+        
+        }
+
         public void PingNext()
         {
             while (true)
             {
+
+                CheckState();
                 if (pingRunning)
                 {
+                    ui.Invoke(ui.cDelegate, "~Im Running");
                     try
                     {
                         nextServer = (IServer)Activator.GetObject(
                             typeof(IServer),
                             nextServerLocal);
+                        pingTimer.Enabled = true;
+
+                        ui.Invoke(ui.cDelegate, "SPing");
                         nextServer.Ping(ui.GetServerId());
+                        ui.Invoke(ui.cDelegate, "FPing");
+                        pingTimer.Enabled = false;
+                        pingTimer.Interval = PING_TIME_OUT;
                     }
-                    catch (Exception)
+                    catch (Exception) 
                     {
-                        IMasterServer m = (IMasterServer)Activator.GetObject(
-                            typeof(IMasterServer),
-                            servers[0]);
+                        ui.Invoke(ui.cDelegate, "Int Exception");
+                        RecoverRing();
 
-                        int[] new_range = m.JoinRange(ui.GetServerId(), nextServerLocal);
-                        minUID = new_range[0];
-                        maxUID = new_range[1];
-
-                        nextServerLocal = m.AddDeadServer(nextServerLocal, servers[0]);
-                        nextServer = (IServer)Activator.GetObject(
-                            typeof(IServer),
-                            nextServerLocal);
-
-                        List<PadInt> toAdd = nextServer.GetReplicatedList();
-
-                        List<PadInt> toReplicate = new List<PadInt>();
-                        foreach (PadInt p in padiInts.Values)
-                        {
-                            toReplicate.Add(p);
-                        }
-                        nextServer.ReplicateList(toReplicate, true);
-
-                        AddPadInts(toAdd);
-
-                        ui.Invoke(ui.pDelegate, minUID, maxUID);
-                        ui.Invoke(ui.cDelegate, "Server " + nextServerLocal + " doesn't responde. New next is: " + nextServerLocal);
                     }
                     Thread.Sleep(PING_DELAY);
                 }
@@ -734,24 +766,21 @@ namespace MasterServer
         }
         bool IServer.Ping(int nid)
         {
+            CheckState();
             ui.Invoke(ui.cDelegate, "Ping from " + nid.ToString());
             return true;
         }
-
-
         bool IServer.Freeze()
         {
             isRunning = false;
             return true;
         }
-
         bool IServer.Recover()
         {
             isRunning = true;
             fail = false;
             return true;
         }
-
         #endregion
 
         #region master
