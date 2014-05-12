@@ -58,6 +58,7 @@
             this.button1 = new System.Windows.Forms.Button();
             this.statusButton = new System.Windows.Forms.Button();
             this.label7 = new System.Windows.Forms.Label();
+            this.abortButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // label1
@@ -230,10 +231,19 @@
             resources.ApplyResources(this.label7, "label7");
             this.label7.Name = "label7";
             // 
+            // abortButton
+            // 
+            this.abortButton.BackColor = System.Drawing.SystemColors.GradientInactiveCaption;
+            resources.ApplyResources(this.abortButton, "abortButton");
+            this.abortButton.Name = "abortButton";
+            this.abortButton.UseVisualStyleBackColor = false;
+            this.abortButton.Click += new System.EventHandler(this.abortButton_Click);
+            // 
             // AppUI
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.abortButton);
             this.Controls.Add(this.label7);
             this.Controls.Add(this.statusButton);
             this.Controls.Add(this.button1);
@@ -300,6 +310,7 @@
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Button statusButton;
         private System.Windows.Forms.Label label7;
+        private System.Windows.Forms.Button abortButton;
 
     }
 }

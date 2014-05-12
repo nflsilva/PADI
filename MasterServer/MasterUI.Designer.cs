@@ -75,6 +75,7 @@
             // 
             // portBox
             // 
+            this.portBox.Enabled = false;
             this.portBox.Location = new System.Drawing.Point(271, 30);
             this.portBox.Name = "portBox";
             this.portBox.Size = new System.Drawing.Size(114, 20);

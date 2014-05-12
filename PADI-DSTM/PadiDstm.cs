@@ -26,7 +26,6 @@ namespace PADI_DSTM
         private static int txNumber;
 
 
-
         public static PadInt CreatePadInt(int uid)
         {
             PadInt pint = null;
@@ -146,7 +145,16 @@ namespace PADI_DSTM
 
         public static bool TxCommit()
         {
-            bool response = CommitChanges(txNumber);
+            bool response = false;
+            try
+            {
+                response = CommitChanges(txNumber);
+            }
+            catch (RemotingException)
+            {
+                ConnectToSystem();
+                TxCommit();
+            }
 
             dirty.Clear();
             cache.Clear();
@@ -157,7 +165,16 @@ namespace PADI_DSTM
         public static bool TxAbort()
         {
 
-            bool response = server.TxAbort(txNumber);
+            bool response = false;
+            try
+            {
+                response = server.TxAbort(txNumber);
+            }
+            catch (RemotingException)
+            {
+                ConnectToSystem();
+                TxAbort();
+            }
 
             dirty.Clear();
             cache.Clear();
@@ -220,10 +237,17 @@ namespace PADI_DSTM
                 typeof(IMasterServer),
                 MASTER_SERVER_LOCAL);
 
+            try
+            {
+                server = (IMasterServer)Activator.GetObject(
+                    typeof(IMasterServer),
+                    master.GetAvailableServer());
+            }
+            catch (RemotingException)
+            {
+                throw new TxException("Couldn't find system. Master must be down.");
+            }
 
-            server = (IMasterServer)Activator.GetObject(
-                typeof(IMasterServer),
-                master.GetAvailableServer());
 
             return true;
         }

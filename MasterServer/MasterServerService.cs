@@ -11,6 +11,7 @@ namespace MasterServer
 {
     public class MasterServerService : MarshalByRefObject, IMasterServer
     {
+        private static int PING_DELAY = 2000;//ms
 
         private Dictionary<int, PadInt> padiInts;               //this will hold the PadiIntObjects
         private Dictionary<int, string> servers;                //this will hold the servers locals;
@@ -35,7 +36,7 @@ namespace MasterServer
         private bool isRunning;     //state flag
         private bool fail;          //state flag for fail
 
-        private bool pingRunning;
+        public bool pingRunning;
 
         private string nextServerLocal = "";
         private IServer nextServer = null;
@@ -170,10 +171,13 @@ namespace MasterServer
             int targID = GetIDByLocal(targLocal);
             ui.Invoke(ui.cDelegate, "JOINED> " + myID + " with " + targID);
 
-            int new_min = 2 * ranges[targID].Item2 - 4 * ranges[myID].Item2;
+            //int new_min = 2 * ranges[targID].Item2 - 4 * ranges[myID].Item2;
             //FIXME: WRONG CALCULUM D:
+            int new_min = ranges[myID].Item1;
 
             int new_max = ranges[targID].Item2;
+
+
             resp[0] = new_min;
             resp[1] = new_max;
 
@@ -196,13 +200,10 @@ namespace MasterServer
             {
                 if (uid >= entry.Value.Item1 && uid <= entry.Value.Item2)
                 {
-
-
-                    ui.Invoke(ui.cDelegate, "OUT> " + uid + " is in server " + entry.Key);
                     return servers[entry.Key];
                 }
             }
-            return "NOT FOUND :O";
+            return "NOT FOUND - SHOULD NEVER HAPPEN :O";
         }
 
         public void PingNext()
@@ -247,7 +248,7 @@ namespace MasterServer
                         ui.Invoke(ui.pDelegate, minUID, maxUID);
                         ui.Invoke(ui.cDelegate, "Server " + nextServerLocal + " doesn't responde. New next is: " + nextServerLocal);
                     }
-                    Thread.Sleep(10000);
+                    Thread.Sleep(PING_DELAY);
                 }
             }
         }

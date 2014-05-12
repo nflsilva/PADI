@@ -11,6 +11,9 @@ namespace SlaveServer
 
     class SlaveServerService : MarshalByRefObject, IServer
     {
+
+        private static int PING_DELAY = 2000;//ms
+
         private Dictionary<int, PadInt> padiInts;               //this will hold the PadiIntObjects
         private Dictionary<int, string> servers;                //this will hold the servers locals;
         private Dictionary<int, List<PadInt>> transactions;     //this will hold the objects to be commited in this server in each transaction;
@@ -174,7 +177,7 @@ namespace SlaveServer
                         ui.Invoke(ui.cDelegate, "Server " + nextServerLocal + " doesn't responde. New next is: " + nextServerLocal);
                     }
                 }
-                Thread.Sleep(10000);
+                Thread.Sleep(PING_DELAY);
             }
         }
 

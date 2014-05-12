@@ -110,6 +110,7 @@ namespace MasterServer
                 if (CloseChannel())
                 {
                     isRunning = false;
+                    mss.pingRunning = false;
                     portBox.Enabled = true;
                     StartButton.Text = "Start";
                     AppendTextBoxMethod("Server stoped");
@@ -130,6 +131,7 @@ namespace MasterServer
                 {
                     isRunning = true;
                     portBox.Enabled = false;
+                    mss.pingRunning = true;
                     StartButton.Text = "Stop";
                     AppendTextBoxMethod("Server is running on port: " + portBox.Text);
                 }

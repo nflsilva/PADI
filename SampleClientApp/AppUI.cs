@@ -66,7 +66,6 @@ namespace SampleClientApp
             }
         }
 
-        //created the object on local Cache
         private void createButton_Click(object sender, EventArgs e)
         {
             if (!ID_PATTERN.IsMatch(createIDBox.Text))
@@ -78,7 +77,6 @@ namespace SampleClientApp
             AppendTextBoxMethod(valuesTextBox, pint.GetUid() + " | " + pint.Read() + " | " + pint.GetVersion());
         }
 
-        //access brings the object to Cache
         private void accessButton_Click(object sender, EventArgs e)
         {
 
@@ -148,9 +146,9 @@ namespace SampleClientApp
             {
                 PadiDstm.TxCommit();
             }
-            catch (TxException)
+            catch (TxException txe)
             {
-                MessageBox.Show("Could not commit");
+                AppendTextBoxMethod("Error: " + txe.GetMessage());
             }
             
         }
@@ -158,6 +156,7 @@ namespace SampleClientApp
         private void button1_Click(object sender, EventArgs e)
         {
             commitButton.Enabled = true;
+            abortButton.Enabled = true;
             startTxButton.Enabled = true;
 
             wID.Enabled = true;
@@ -175,7 +174,14 @@ namespace SampleClientApp
             accessIDBox.Enabled = true;
             accessIDBox.Text = "";
 
-            PadiDstm.TxBegin();
+            try
+            {
+                PadiDstm.TxBegin();
+            }
+            catch (TxException txe)
+            {
+                AppendTextBoxMethod("Error: " + txe.GetMessage());
+            }
 
         }
 
@@ -186,8 +192,14 @@ namespace SampleClientApp
                 MessageBox.Show(URI_WARNING);
                 return;
             }
-            PadiDstm.Freeze(ServerLocalBox.Text);
-
+            try
+            {
+                PadiDstm.Freeze(ServerLocalBox.Text);
+            }
+            catch (TxException txe)
+            {
+                AppendTextBoxMethod("Error: " + txe.GetMessage());
+            }
         }
 
         private void RecoverButton_Click(object sender, EventArgs e)
@@ -197,7 +209,16 @@ namespace SampleClientApp
                 MessageBox.Show(URI_WARNING);
                 return;
             }
-            PadiDstm.Recover(ServerLocalBox.Text);
+
+            try
+            {
+                PadiDstm.Recover(ServerLocalBox.Text);
+            }
+            catch (TxException txe)
+            {
+                AppendTextBoxMethod("Error: " + txe.GetMessage());
+            }
+
         }
 
         private void button1_Click_1(object sender, EventArgs e)
@@ -207,7 +228,14 @@ namespace SampleClientApp
                 MessageBox.Show(URI_WARNING);
                 return;
             }
-            PadiDstm.Fail(ServerLocalBox.Text);
+            try
+            {
+                PadiDstm.Fail(ServerLocalBox.Text);
+            }
+            catch (TxException txe)
+            {
+                AppendTextBoxMethod("Error: " + txe.GetMessage());
+            }
         }
 
         private void statusButton_Click(object sender, EventArgs e)
@@ -217,8 +245,50 @@ namespace SampleClientApp
                 MessageBox.Show(URI_WARNING);
                 return;
             }
-            PadiDstm.Status();
+            try
+            {
+                PadiDstm.Status();
+            }
+            catch (TxException txe)
+            {
+                AppendTextBoxMethod("Error: " + txe.GetMessage());
+            }
 
+        }
+
+        private void abortButton_Click(object sender, EventArgs e)
+        {
+
+            commitButton.Enabled = false;
+            abortButton.Enabled = false;
+            startTxButton.Enabled = true;
+
+
+            wID.Enabled = false;
+            wID.Text = "";
+            writeButton.Enabled = false;
+
+            wValueBox.Enabled = false;
+            wValueBox.Text = "";
+
+            createButton.Enabled = false;
+            createIDBox.Enabled = false;
+            createIDBox.Text = "";
+
+            accessButton.Enabled = false;
+            accessIDBox.Enabled = false;
+            accessIDBox.Text = "";
+            valuesTextBox.Text = "";
+
+            try
+            {
+                PadiDstm.TxAbort();
+            }
+            catch (TxException txe)
+            {
+                AppendTextBoxMethod("Error: " + txe.GetMessage());
+            }
+            
         }
     }
 }

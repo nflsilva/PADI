@@ -13,5 +13,10 @@ namespace PADI_DSTM
         {
         }
 
+        public string GetMessage()
+        {
+            return base.Message;
+        }
+
     }
 }
