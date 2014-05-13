@@ -8,13 +8,13 @@ using System.Timers;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Runtime.Remoting;
+using System.Net.Sockets;
 
 namespace MasterServer
 {
     public class MasterServerService : MarshalByRefObject, IMasterServer
     {
         private static int PING_DELAY = 2000;//ms
-        private static int PING_TIME_OUT = 8000;
 
         private Dictionary<int, PadInt> padiInts;               //this will hold the PadiIntObjects
         private Dictionary<int, string> servers;                //this will hold the servers locals;
@@ -40,6 +40,7 @@ namespace MasterServer
         private bool fail;          //state flag for fail
 
         public bool pingRunning;
+        public bool stopPingThread;
 
         private string nextServerLocal = "";
         private IServer nextServer = null;
@@ -49,8 +50,6 @@ namespace MasterServer
 
         private int longerIntervalIndex = 0;
         private int expnent = 0;
-
-        private System.Timers.Timer pingTimer;
 
         public MasterServerService(MasterUI nui)
         {
@@ -66,6 +65,7 @@ namespace MasterServer
             pingRunning = false;
             isAccessingTxNumber = false;
             fail = false;
+            stopPingThread = false;
             padiInts = new Dictionary<int, PadInt>();
             servers = new Dictionary<int, string>();
             transactions = new Dictionary<int, List<PadInt>>();
@@ -75,22 +75,19 @@ namespace MasterServer
             ranges = new Dictionary<int, Tuple<int, int>>();
             replicas = new Dictionary<int, PadInt>();
 
-            pingTimer = new System.Timers.Timer();
-            pingTimer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
-
-            pingTimer.Interval = PING_TIME_OUT;
-            pingTimer.Enabled = false;
-
             ranges.Add(0, new Tuple<int, int>(minUID, maxUID));
 
             servers.Add(0, "tcp://localhost:2000/Server");
             SetNextServer(servers[0]);
 
             workerThread = new Thread(PingNext);
-            workerThread.Start();
 
         }
 
+        public void StartThread()
+        {
+            workerThread.Start();
+        }
 
         #region replication
 
@@ -217,11 +214,6 @@ namespace MasterServer
             return "NOT FOUND - SHOULD NEVER HAPPEN :O";
         }
 
-        private void OnTimedEvent(object source, ElapsedEventArgs e) {
-            ui.Invoke(ui.cDelegate, "TIMEOUT! - " + pingRunning.ToString());
-            workerThread.Interrupt();
-        }
-
         public void RecoverRing() {
             IMasterServer m = (IMasterServer)Activator.GetObject(
                typeof(IMasterServer),
@@ -254,31 +246,27 @@ namespace MasterServer
 
         public void PingNext()
         {
-            while (true)
+            while (!stopPingThread)
             {
 
                 CheckState();
                 if (pingRunning)
                 {
-                    ui.Invoke(ui.cDelegate, "~Im Running");
                     try
                     {
                         nextServer = (IServer)Activator.GetObject(
                             typeof(IServer),
                             nextServerLocal);
-                        pingTimer.Enabled = true;
 
-                        ui.Invoke(ui.cDelegate, "SPing");
                         nextServer.Ping(ui.GetServerId());
-                        ui.Invoke(ui.cDelegate, "FPing");
-                        pingTimer.Enabled = false;
-                        pingTimer.Interval = PING_TIME_OUT;
                     }
-                    catch (Exception) 
+                    catch (RemotingException)
                     {
-                        ui.Invoke(ui.cDelegate, "Int Exception");
                         RecoverRing();
-
+                    }
+                    catch (SocketException)
+                    {
+                        RecoverRing();
                     }
                     Thread.Sleep(PING_DELAY);
                 }
@@ -377,14 +365,12 @@ namespace MasterServer
                 }
             }
             isWriting = true;
-            ui.Invoke(ui.cDelegate, "WriteLock - ON");
         }
         private void FreeWriteLock()
         {
             isWriting = false;
             Monitor.Pulse(padiInts);
             Monitor.Exit(padiInts);
-            ui.Invoke(ui.cDelegate, "WriteLock - OFF");
         }
 
         private void GetReadLock()
@@ -407,7 +393,6 @@ namespace MasterServer
                 }
             }
             isReading = true;
-            ui.Invoke(ui.cDelegate, "ReadLock - ON");
         }
 
         private void FreeReadLock()
@@ -415,7 +400,6 @@ namespace MasterServer
             isReading = false;
             Monitor.Pulse(padiInts);
             Monitor.Exit(padiInts);
-            ui.Invoke(ui.cDelegate, "ReadLock - OFF");
         }
 
         #endregion
@@ -458,12 +442,33 @@ namespace MasterServer
                     typeof(IServer),
                     targetLocal);
 
-                return s.CreatePadiInt(txNumber, uid);
+                PadInt resp = null;
+                bool exep = false;
+                try
+                {
+                    resp = s.CreatePadiInt(txNumber, uid);
+
+                }
+                catch (RemotingException)
+                {
+                    exep = true;
+                }
+                catch (SocketException)
+                {
+                    exep = true;
+                }
+                if (exep)
+                {
+                    targetLocal = m.GetServerLocalForPadInt(uid);
+                    s = (IServer)Activator.GetObject(
+                        typeof(IServer),
+                        targetLocal);
+                    resp = s.CreatePadiInt(txNumber, uid);
+                }
+
+                return resp;
             }
         }
-
-        //This function corresponds to a read(); the txNumber will be here only for future use, in case of a change, but for an
-        //optimistic aprouch, this isn't used
         PadInt IServer.AccessPadiInt(int txNumber, int uid)
         {
             CheckState();
@@ -499,10 +504,33 @@ namespace MasterServer
                     typeof(IServer),
                     targetLocal);
 
-                return s.AccessPadiInt(txNumber, uid);
+                PadInt resp = null;
+                bool exep = false;
+                try
+                {
+                    resp = s.AccessPadiInt(txNumber, uid);
+
+                }
+                catch (RemotingException)
+                {
+                    exep = true;
+                }
+                catch (SocketException)
+                {
+                    exep = true;
+                }
+                if (exep)
+                {
+                    targetLocal = m.GetServerLocalForPadInt(uid);
+                    s = (IServer)Activator.GetObject(
+                        typeof(IServer),
+                        targetLocal);
+                    resp = s.AccessPadiInt(txNumber, uid);
+                }
+
+                return resp;
             }
         }
-
         bool IServer.TryWrite(int txNumber, PadInt padiInt)
         {
             CheckState();
@@ -537,11 +565,22 @@ namespace MasterServer
                 if (!participants[txNumber].Contains(serverLocal))
                 {
                     participants[txNumber].Add(serverLocal);
-                    server.TxJoin(txNumber);
+                    try
+                    {
+                        server.TxJoin(txNumber);
+                        server.TryWrite(txNumber, padiInt);
+                    }
+                    catch (RemotingException)
+                    {
+                        return false;
+                    }
+                    catch (SocketException)
+                    {
+                        return false;
+                    }
+
                 }
-
-
-                return server.TryWrite(txNumber, padiInt);
+                return true;
             }
         }
 
@@ -585,7 +624,21 @@ namespace MasterServer
                     server = (IServer)Activator.GetObject(
                     typeof(IServer),
                     local);
-                    if (!server.CanCommit(txNumber))
+
+                    bool resp;
+                    try
+                    {
+                        resp = server.CanCommit(txNumber);
+                    }
+                    catch (RemotingException)
+                    {
+                        resp = false;
+                    }
+                    catch (SocketException)
+                    {
+                        resp = false;
+                    }
+                    if (!resp)
                     {
                         canCommit = false;
                         break;
@@ -602,7 +655,20 @@ namespace MasterServer
                     server = (IServer)Activator.GetObject(
                     typeof(IServer),
                     local);
-                    server.TxAbort(txNumber);
+
+                    try
+                    {
+                        server.TxAbort(txNumber);
+                    }
+                    catch(SocketException)
+                    {
+                        continue;
+                    }
+                    catch (RemotingException)
+                    {
+                        continue;
+                    }
+
                 }
                 AbortTx(txNumber);
                 return false;
@@ -613,6 +679,8 @@ namespace MasterServer
                 server = (IServer)Activator.GetObject(
                 typeof(IServer),
                 local);
+
+
                 server.TxCommit(txNumber);
 
             }
@@ -750,8 +818,14 @@ namespace MasterServer
                     continue;
                 }
                 s = (IServer)Activator.GetObject(typeof(IServer), pair.Value);
-
-                s.Status();
+                try
+                {
+                    s.Status();
+                }
+                catch (Exception)
+                {
+                    continue;
+                }
             }
 
             return true;
@@ -784,6 +858,11 @@ namespace MasterServer
         #endregion
 
         #region master
+        string IMasterServer.GetNextServer(string targLocal)
+        {
+            int tragID = GetIDByLocal(targLocal);
+            return pairs[tragID];
+        }
         int IMasterServer.GetTxNumber()
         {
             CheckState();

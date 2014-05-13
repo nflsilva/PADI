@@ -268,6 +268,10 @@ namespace PADI_DSTM
             {
                 return server.TryTxCommit(txNumber);
             }
+            else
+            {
+                server.TxAbort(txNumber);
+            }
 
             return false;
         }

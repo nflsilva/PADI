@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -135,6 +136,7 @@ namespace SlaveServer
                 if (CloseChannel())
                 {
                     isRunning = false;
+                    sss.stopPingThread = true;
                     slavePortBox.Enabled = true;
                     masterPortBox.Enabled = true;
                     serverIDBox.Enabled = true;
@@ -163,6 +165,8 @@ namespace SlaveServer
                     slavePortBox.Enabled = false;
                     masterPortBox.Enabled = false;
                     serverIDBox.Enabled = false;
+                    sss.stopPingThread = false;
+                    sss.StartThread();
                     startButton.Text = "Stop";
                 }
                 else {
@@ -177,7 +181,10 @@ namespace SlaveServer
             
             try
             {
-                channel = new TcpChannel(port);
+                IDictionary props = new Hashtable();
+                props["port"] = port;
+                props["timeout"] = 4000;
+                channel = new TcpChannel(props, null, null);
                 ChannelServices.RegisterChannel(channel, false);
             }
             catch (SocketException)

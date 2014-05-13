@@ -5,6 +5,8 @@ using System.Text;
 using Shared;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Net.Sockets;
+using System.Runtime.Remoting;
 
 namespace SlaveServer
 {
@@ -28,6 +30,7 @@ namespace SlaveServer
         private bool fail;          //state flag for fail
 
         public bool pingRunning;
+        public bool stopPingThread;
 
         private string nextServerLocal = "";
         private IServer nextServer = null;
@@ -48,6 +51,7 @@ namespace SlaveServer
             isRunning = true;
             pingRunning = false;
             fail = false;
+            stopPingThread = false;
             padiInts = new Dictionary<int, PadInt>();
             servers = new Dictionary<int, string>();
             transactions = new Dictionary<int, List<PadInt>>();
@@ -60,9 +64,12 @@ namespace SlaveServer
             servers.Add(0, "tcp://localhost:2000/Server");
 
             workerThread = new Thread(PingNext);
-            workerThread.Start();
         }
 
+        public void StartThread()
+        {
+            workerThread.Start();
+        }
 
         #region replication
 
@@ -166,7 +173,7 @@ namespace SlaveServer
         }
         public void PingNext()
         {
-            while (true)
+            while (!stopPingThread)
             {
                 CheckState();
                 if (pingRunning)
@@ -178,9 +185,13 @@ namespace SlaveServer
                             nextServerLocal);
                         nextServer.Ping(ui.GetServerId());
                     }
-                    catch (Exception)
+                    catch (RemotingException)
                     {
-                        RecoverRing();  
+                        RecoverRing();
+                    }
+                    catch (SocketException)
+                    {
+                        RecoverRing();
                     }
                     Thread.Sleep(PING_DELAY);
                 }
@@ -271,12 +282,35 @@ namespace SlaveServer
                 servers[0]);
                 string targetLocal = m.GetServerLocalForPadInt(uid);
 
-
                 IServer s = (IServer)Activator.GetObject(
                     typeof(IServer),
                     targetLocal);
 
-                return s.CreatePadiInt(txNumber, uid);
+                PadInt resp = null;
+                bool exep = false;
+                try
+                {
+                    resp = s.CreatePadiInt(txNumber, uid);
+
+                }
+                catch (RemotingException)
+                {
+                    exep = true;
+                }
+                catch (SocketException)
+                {
+                    exep = true;
+                }
+                if (exep)
+                {
+                    targetLocal = m.GetServerLocalForPadInt(uid);
+                    s = (IServer)Activator.GetObject(
+                        typeof(IServer),
+                        targetLocal);
+                    resp = s.CreatePadiInt(txNumber, uid);
+                }
+
+                return resp;
             }
         }
         PadInt IServer.AccessPadiInt(int txNumber, int uid)
@@ -315,7 +349,31 @@ namespace SlaveServer
                     typeof(IServer),
                     targetLocal);
 
-                return s.AccessPadiInt(txNumber, uid);
+                PadInt resp = null;
+                bool exep = false;
+                try
+                {
+                    resp = s.AccessPadiInt(txNumber, uid);
+
+                }
+                catch (RemotingException)
+                {
+                    exep = true;
+                }
+                catch (SocketException)
+                {
+                    exep = true;
+                }
+                if (exep)
+                {
+                    targetLocal = m.GetServerLocalForPadInt(uid);
+                    s = (IServer)Activator.GetObject(
+                        typeof(IServer),
+                        targetLocal);
+                    resp = s.AccessPadiInt(txNumber, uid);
+                }
+
+                return resp;
             }
         }
         bool IServer.TryWrite(int txNumber, PadInt padiInt)
@@ -348,11 +406,22 @@ namespace SlaveServer
 
                 if (!participants[txNumber].Contains(serverLocal))
                 {
-                    participants[txNumber].Add(serverLocal);
-                    server.TxJoin(txNumber);
-                }
+                    try
+                    {
+                        server.TxJoin(txNumber);
+                        server.TryWrite(txNumber, padiInt);
+                    }
+                    catch (RemotingException)
+                    {
+                        return false;
+                    }
+                    catch (SocketException)
+                    {
+                        return false;
+                    }
 
-                return server.TryWrite(txNumber, padiInt);
+                }
+                return true;
             }
         }
 
@@ -412,7 +481,22 @@ namespace SlaveServer
                     server = (IServer)Activator.GetObject(
                     typeof(IServer),
                     local);
-                    if (!server.CanCommit(txNumber))
+
+                    bool resp;
+                    try
+                    {
+                        resp = server.CanCommit(txNumber);
+                    }
+                    catch (RemotingException)
+                    {
+                        resp = false;
+                    }
+                    catch (SocketException)
+                    {
+                        resp = false;
+                    }
+
+                    if (!resp)
                     {
                         canCommit = false;
                         break;

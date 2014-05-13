@@ -18,7 +18,7 @@ namespace Shared
 
         bool SplitRange(int uid, string local);
         int[] JoinRange(int uid, string local);
-
         string GetServerLocalForPadInt(int uid);
+        string GetNextServer(string targLocal);
     }
 }

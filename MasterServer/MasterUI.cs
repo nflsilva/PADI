@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -113,6 +114,7 @@ namespace MasterServer
                     mss.pingRunning = false;
                     portBox.Enabled = true;
                     StartButton.Text = "Start";
+                    mss.stopPingThread = true;
                     AppendTextBoxMethod("Server stoped");
                 }
                 else
@@ -132,6 +134,8 @@ namespace MasterServer
                     isRunning = true;
                     portBox.Enabled = false;
                     mss.pingRunning = true;
+                    mss.stopPingThread = false;
+                    mss.StartThread();
                     StartButton.Text = "Stop";
                     AppendTextBoxMethod("Server is running on port: " + portBox.Text);
                 }
@@ -140,7 +144,10 @@ namespace MasterServer
         }
         private bool OpenChannel(int port)
         {
-            channel = new TcpChannel(port);
+            IDictionary props = new Hashtable();
+            props["port"] = port;
+            props["timeout"] = 4000;
+            channel = new TcpChannel(props, null, null);
             ChannelServices.RegisterChannel(channel, false);
             mss = new MasterServerService(this);
 
