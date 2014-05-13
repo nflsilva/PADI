@@ -406,10 +406,10 @@ namespace SlaveServer
 
                 if (!participants[txNumber].Contains(serverLocal))
                 {
+                    participants[txNumber].Add(serverLocal);
                     try
                     {
                         server.TxJoin(txNumber);
-                        server.TryWrite(txNumber, padiInt);
                     }
                     catch (RemotingException)
                     {
@@ -421,6 +421,7 @@ namespace SlaveServer
                     }
 
                 }
+                server.TryWrite(txNumber, padiInt);
                 return true;
             }
         }
@@ -433,7 +434,11 @@ namespace SlaveServer
         bool IServer.TxJoin(int txNumber)
         {
             CheckState();
-            transactions.Add(txNumber, new List<PadInt>());
+            if (!transactions.ContainsKey(txNumber))
+            {
+                transactions.Add(txNumber, new List<PadInt>());
+            }
+                
             return true;
         }
 
@@ -445,7 +450,7 @@ namespace SlaveServer
         private bool CanCommitMyself(int txNumber)
         {
             CheckState();
-            GetReadLock();
+            GetWriteLock();
             bool canCommit = true;
             foreach (PadInt pint in transactions[txNumber])
             {
@@ -456,7 +461,6 @@ namespace SlaveServer
                     break;
                 }
             }
-            FreeReadLock();
             //Check timestamp logic
             return canCommit;
         }
@@ -534,7 +538,6 @@ namespace SlaveServer
         private bool CommitTx(int txNumber)
         {
             PadInt npint;
-            GetWriteLock();
             foreach (PadInt pint in transactions[txNumber])
             {
                 if (padiInts.ContainsKey(pint.GetUid()))
@@ -567,6 +570,7 @@ namespace SlaveServer
             if(transactions.ContainsKey(txNumber)){
                 transactions.Remove(txNumber);
             }
+            FreeWriteLock();
             ui.Invoke(ui.cDelegate, "TxAbort> Tx id: " + txNumber + " has been aborted!");
             return true;
         }
@@ -684,7 +688,11 @@ namespace SlaveServer
         }
         private void GetWriteLock()
         {
-            Monitor.Enter(padiInts);
+           if(!Monitor.TryEnter(padiInts, 8000)){
+
+               ui.Invoke(ui.cDelegate, "ReasingWriteLock");
+               isWriting = false;
+           }
 
             if (isWriting || isReading)
             {
@@ -702,10 +710,19 @@ namespace SlaveServer
                 }
             }
             isWriting = true;
+            Monitor.Exit(padiInts);
             ui.Invoke(ui.cDelegate, "WriteLock - ON");
         }
         private void FreeWriteLock()
         {
+            if (!Monitor.TryEnter(padiInts, 8000))
+            {
+
+                ui.Invoke(ui.cDelegate, "ReasingWriteLock");
+                isWriting = false;
+                Monitor.Exit(padiInts);
+
+            }
             isWriting = false;
             Monitor.Pulse(padiInts);
             Monitor.Exit(padiInts);

@@ -32,16 +32,16 @@ namespace PADI_DSTM
             try
             {
                 pint = server.CreatePadiInt(txNumber, uid);
-                pint.Write(pint.Read());
             }
-            catch (Exception)
+            catch (RemotingException)
             {
                 ConnectToSystem();
                 CreatePadInt(uid);
             }
 
             if (pint != null)
-            { 
+            {
+                pint.Write(pint.Read());
                 if (!cache.ContainsKey(pint.GetUid()))
                 {
                     cache.Add(pint.GetUid(), pint);
@@ -85,7 +85,7 @@ namespace PADI_DSTM
                 {
                     pint = server.AccessPadiInt(txNumber, uid);
                 }
-                catch (Exception)
+                catch (RemotingException)
                 {
                     ConnectToSystem();
                     AccessPadInt(uid);
@@ -255,7 +255,7 @@ namespace PADI_DSTM
 
         private static bool CommitChanges(int txNumber)
         {
-            bool tryResp = false;
+            bool tryResp = true;
             foreach (PadInt pint in cache.Values)
             {
                 if (!pint.isClean())

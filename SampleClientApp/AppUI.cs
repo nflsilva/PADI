@@ -74,7 +74,15 @@ namespace SampleClientApp
                 return;
             }
             PadInt pint = PadiDstm.CreatePadInt(Convert.ToInt32(createIDBox.Text));
-            AppendTextBoxMethod(valuesTextBox, pint.GetUid() + " | " + pint.Read() + " | " + pint.GetVersion());
+            if (pint != null)
+            {
+                AppendTextBoxMethod(valuesTextBox, pint.GetUid() + " | " + pint.Read() + " | " + pint.GetVersion());
+            }
+            else
+            {
+                AppendTextBoxMethod(dialogTextBox, "PadInt already exists!");
+            }
+            
         }
 
         private void accessButton_Click(object sender, EventArgs e)

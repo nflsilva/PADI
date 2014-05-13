@@ -347,7 +347,11 @@ namespace MasterServer
         }
         private void GetWriteLock()
         {
-            Monitor.Enter(padiInts);
+            if (!Monitor.TryEnter(padiInts, 8000))
+            {
+                ui.Invoke(ui.cDelegate, "ReasingWriteLock");
+                isWriting = false;
+            }
 
             if (isWriting || isReading)
             {
@@ -365,14 +369,20 @@ namespace MasterServer
                 }
             }
             isWriting = true;
+            Monitor.Exit(padiInts);
         }
         private void FreeWriteLock()
         {
+            if (!Monitor.TryEnter(padiInts, 8000))
+            {
+                ui.Invoke(ui.cDelegate, "ReasingWriteLock");
+                isWriting = false;
+                Monitor.Exit(padiInts);
+            }
             isWriting = false;
             Monitor.Pulse(padiInts);
             Monitor.Exit(padiInts);
         }
-
         private void GetReadLock()
         {
             Monitor.Enter(padiInts);
@@ -393,10 +403,11 @@ namespace MasterServer
                 }
             }
             isReading = true;
+            Monitor.Exit(padiInts);
         }
-
         private void FreeReadLock()
         {
+            Monitor.Enter(padiInts);
             isReading = false;
             Monitor.Pulse(padiInts);
             Monitor.Exit(padiInts);
@@ -567,8 +578,7 @@ namespace MasterServer
                     participants[txNumber].Add(serverLocal);
                     try
                     {
-                        server.TxJoin(txNumber);
-                        server.TryWrite(txNumber, padiInt);
+                        server.TxJoin(txNumber); server.TryWrite(txNumber, padiInt);
                     }
                     catch (RemotingException)
                     {
@@ -580,6 +590,7 @@ namespace MasterServer
                     }
 
                 }
+                server.TryWrite(txNumber, padiInt);
                 return true;
             }
         }
@@ -590,7 +601,10 @@ namespace MasterServer
         bool IServer.TxJoin(int txNumber)
         {
             CheckState();
-            transactions.Add(txNumber, new List<PadInt>());
+            if (!transactions.ContainsKey(txNumber))
+            {
+                transactions.Add(txNumber, new List<PadInt>());
+            }
 
             return true;
         }
@@ -698,7 +712,7 @@ namespace MasterServer
         private bool CanCommitMyself(int txNumber)
         {
             CheckState();
-            GetReadLock();
+            GetWriteLock();
             bool canCommit = true;
             foreach (PadInt pint in transactions[txNumber])
             {
@@ -709,7 +723,6 @@ namespace MasterServer
                     break;
                 }
             }
-            FreeReadLock();
             //Check timestamp logic
             return canCommit;
         }
@@ -717,7 +730,6 @@ namespace MasterServer
         private bool CommitTx(int txNumber)
         {
             PadInt npint;
-            GetWriteLock();
             foreach (PadInt pint in transactions[txNumber])
             {
                 if (padiInts.ContainsKey(pint.GetUid()))
@@ -750,6 +762,7 @@ namespace MasterServer
                 transactions.Remove(txNumber);
                 participants.Remove(txNumber);
             }
+          FreeWriteLock();
             ui.Invoke(ui.cDelegate, "TxAbort> Tx id: " + txNumber + " has been aborted!");
             return true;
         }
@@ -831,7 +844,6 @@ namespace MasterServer
             return true;
 
         }
-
         bool IServer.Fail()
         {
             CheckState();
