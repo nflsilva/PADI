@@ -54,6 +54,7 @@ namespace SampleClientApp
                 dialogTextBox.AppendText("\r\n" + text);
             }
         }
+
         public void AppendTextBoxMethod(TextBox box, string text)
         {
             if (box.Text.Length == 0)

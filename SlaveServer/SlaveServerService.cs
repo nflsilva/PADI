@@ -15,6 +15,7 @@ namespace SlaveServer
     {
 
         private static int PING_DELAY = 2000;//ms
+        private static int WRITE_LOCK_TIMEOUT = 10000; //ms
 
         private Dictionary<int, PadInt> padiInts;               //this will hold the PadiIntObjects
         private Dictionary<int, string> servers;                //this will hold the servers locals;
@@ -41,6 +42,9 @@ namespace SlaveServer
         private static SlaveUI ui;
         private Thread workerThread;
 
+        private Object recoverObject;
+        private bool recovered;
+
 
         public SlaveServerService(SlaveUI nui)
         {
@@ -52,12 +56,13 @@ namespace SlaveServer
             pingRunning = false;
             fail = false;
             stopPingThread = false;
+            recovered = false;
             padiInts = new Dictionary<int, PadInt>();
             servers = new Dictionary<int, string>();
             transactions = new Dictionary<int, List<PadInt>>();
             participants = new Dictionary<int, List<string>>();
             replicas = new Dictionary<int, PadInt>();
-
+            recoverObject = new Object();
             minUID = 0;
             maxUID = 0;
 
@@ -103,7 +108,6 @@ namespace SlaveServer
             replicas[uid] = pInt;
             return true;
         }
-
         public void AddPadInts(List<PadInt> padIntList)
         {
             foreach (PadInt p in padIntList)
@@ -133,13 +137,11 @@ namespace SlaveServer
             }
             return list;
         }
-
         public void SetPadIntRange(int min, int max)
         {
             minUID = min;
             maxUID = max;
         }
-
         private void RecoverRing()
         {
             IMasterServer m = (IMasterServer)Activator.GetObject(
@@ -168,7 +170,11 @@ namespace SlaveServer
 
             AddPadInts(toAdd);
 
-            ui.Invoke(ui.pDelegate, minUID, maxUID);
+            int[] r = new int[2];
+            r[0] = minUID;
+            r[1] = maxUID;
+
+            ui.Invoke(ui.interDelegate, r);
             ui.Invoke(ui.cDelegate, "Server " + nextServerLocal + " doesn't responde. New next is: " + nextServerLocal);
         }
         public void PingNext()
@@ -191,20 +197,18 @@ namespace SlaveServer
                     }
                     catch (SocketException)
                     {
+                        nextServer.Fail();
                         RecoverRing();
                     }
                     Thread.Sleep(PING_DELAY);
                 }
             }
         }
-
         public void SetNextServer(string local)
         {
             nextServerLocal = local;
             pingRunning = true;
         }
-
-
         public string GetNextServer()
         {
             return nextServerLocal;
@@ -240,7 +244,12 @@ namespace SlaveServer
             resp[1] = maxUID;
             maxUID = minUID + ((maxUID - minUID) / 2);
             resp[0] = maxUID + 1;
-            ui.Invoke(ui.pDelegate, minUID, maxUID);
+
+            int[] r = new int[2];
+            r[0] = minUID;
+            r[1] = maxUID;
+
+            ui.Invoke(ui.interDelegate, r);
 
             return resp;
         }
@@ -441,12 +450,10 @@ namespace SlaveServer
                 
             return true;
         }
-
         bool IServer.CanCommit(int txNumber)
         {
             return CanCommitMyself(txNumber);
         }
-
         private bool CanCommitMyself(int txNumber)
         {
             CheckState();
@@ -464,7 +471,6 @@ namespace SlaveServer
             //Check timestamp logic
             return canCommit;
         }
-
         bool IServer.TryTxCommit(int txNumber)
         {
             CheckState();
@@ -534,7 +540,6 @@ namespace SlaveServer
             //Commit on own state
             return true;
         }
-
         private bool CommitTx(int txNumber)
         {
             PadInt npint;
@@ -563,7 +568,6 @@ namespace SlaveServer
             ui.Invoke(ui.cDelegate, "TxCommit> Tx id: " + txNumber + " has been commited!");
             return true;
         }
-
         private bool AbortTx(int txNumber)
         {
             CheckState();
@@ -574,7 +578,6 @@ namespace SlaveServer
             ui.Invoke(ui.cDelegate, "TxAbort> Tx id: " + txNumber + " has been aborted!");
             return true;
         }
-
         int IServer.TxBegin()
         {
             CheckState();
@@ -588,13 +591,11 @@ namespace SlaveServer
 
             return txNumber;
         }
-
         bool IServer.TxCommit(int txNumber)
         {
             CheckState();
             return CommitTx(txNumber);
         }
-
         bool IServer.TxAbort(int txNumber)
         {
             CheckState();
@@ -648,8 +649,10 @@ namespace SlaveServer
         }
         bool IServer.Fail()
         {
-            CheckState();
             fail = true;
+            stopPingThread = true;
+            ui.Invoke(ui.cDelegate, "Im dead");
+            Thread.Sleep(2000);
             return true;
         }
         bool IServer.Freeze()
@@ -661,10 +664,9 @@ namespace SlaveServer
         bool IServer.Recover()
         {
             isRunning = true;
-            fail = false;
+
             return true;
         }
-
         bool IServer.Ping(int nid)
         {
             CheckState();
@@ -677,18 +679,22 @@ namespace SlaveServer
 
         private void CheckState()
         {
-            if (fail)
-            {
-                Environment.Exit(-1); //Dont know what to call here
-            }
-            else
-            {
-                while (!isRunning) ;
+
+            while (!isRunning);
+
+            if (fail) {
+                if (ui != null)
+                {
+                    ui.ResetServer();
+                }
+                Environment.Exit(0);
             }
         }
+
         private void GetWriteLock()
         {
-           if(!Monitor.TryEnter(padiInts, 8000)){
+            if (!Monitor.TryEnter(padiInts, WRITE_LOCK_TIMEOUT))
+            {
 
                ui.Invoke(ui.cDelegate, "ReasingWriteLock");
                isWriting = false;
@@ -715,7 +721,7 @@ namespace SlaveServer
         }
         private void FreeWriteLock()
         {
-            if (!Monitor.TryEnter(padiInts, 8000))
+            if (!Monitor.TryEnter(padiInts, WRITE_LOCK_TIMEOUT))
             {
 
                 ui.Invoke(ui.cDelegate, "ReasingWriteLock");
@@ -728,7 +734,6 @@ namespace SlaveServer
             Monitor.Exit(padiInts);
             ui.Invoke(ui.cDelegate, "WriteLock - OFF");
         }
-
         private void GetReadLock()
         {
             Monitor.Enter(padiInts);
@@ -751,7 +756,6 @@ namespace SlaveServer
             isReading = true;
             ui.Invoke(ui.cDelegate, "ReadLock - ON");
         }
-
         private void FreeReadLock()
         {
             isReading = false;

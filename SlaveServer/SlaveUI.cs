@@ -38,23 +38,34 @@ namespace SlaveServer
 
 
         private bool isRunning;
+
+        public bool recovered;
+
         public delegate void ChangeTextBox(string text);
-        public delegate void ChangePadIntRange(int min, int max);
         public delegate void UpdatePadInts(List<PadInt> pInts);
         public delegate void UpdateRepInts(List<PadInt> pInts);
+        public delegate void UpdateInterval(int[] inter);
+        public delegate void UpdateID(int ID);
+
+        public delegate void Reset();
+
         public ChangeTextBox cDelegate;
-        public ChangePadIntRange pDelegate;
         public UpdatePadInts intDelegate;
         public UpdateRepInts repDelegate;
+
+        public UpdateInterval interDelegate;
+        public UpdateID idDelegate;
+
+        public Reset resetDelegate;
 
         public SlaveUI()
         {
             InitializeComponent();
             isRunning = false;
             cDelegate = new ChangeTextBox(AppendTextBoxMethod);
-            pDelegate = new ChangePadIntRange(ChangeInterval);
             intDelegate = new UpdatePadInts(UpdateIntBox);
             repDelegate = new UpdateRepInts(UpdateRepBox);
+            resetDelegate = new Reset(ResetServer);
             mainPanel.Text = INTRO_MSG;
             masterPortBox.Text = MASTER_DEFAULT_PORT.ToString();
             slavePortBox.Text = SLAVE_DEFAULT_PORT.ToString();
@@ -65,9 +76,10 @@ namespace SlaveServer
         {
             InitializeComponent();
             cDelegate = new ChangeTextBox(AppendTextBoxMethod);
-            pDelegate = new ChangePadIntRange(ChangeInterval);
             intDelegate = new UpdatePadInts(UpdateIntBox);
             repDelegate = new UpdateRepInts(UpdateRepBox);
+            interDelegate = new UpdateInterval(ChangeInterval);
+            idDelegate = new UpdateID(ChangeId);
             this.master = master;
         }
 
@@ -79,7 +91,6 @@ namespace SlaveServer
         {
             return SLAVE_SERVER_LOCAL + "/Server";
         }
-
         public void AppendTextBoxMethod(string text)
         {
             if (this.mainPanel.Text.Length == 0)
@@ -91,7 +102,6 @@ namespace SlaveServer
                 this.mainPanel.AppendText("\r\n" + text);
             }
         }
-
         public void UpdateIntBox(List<PadInt> pInts)
         {
             intBox.Text = "";
@@ -122,13 +132,15 @@ namespace SlaveServer
                 }
             }
         }
-
-        public void ChangeInterval(int min, int max)
+        public void ChangeInterval(int[] inter)
         {
-            this.maxPadIntBox.Text = max.ToString();
-            this.minPadIntBox.Text = min.ToString();
+            this.maxPadIntBox.Text = inter[0].ToString();
+            this.minPadIntBox.Text = inter[1].ToString();
         }
-
+        public void ChangeId(int ID)
+        {
+            this.serverIDBox.Text = ID.ToString();
+        }
         private void button1_Click(object sender, EventArgs e)
         {
             if (isRunning)
@@ -175,7 +187,6 @@ namespace SlaveServer
             }
 
         }
-
         private bool OpenChannel(int port)
         {
             
@@ -209,10 +220,13 @@ namespace SlaveServer
         {
             master.Unregister(SLAVE_SERVER_ID);
             ChannelServices.UnregisterChannel(channel);
-            RemotingServices.Disconnect(sss);
-            isRunning = false;
-            sss.pingRunning = false;
+            RegisterOnMaster();
+            sss.StartThread();
             return true;
+        }
+        public void ResetServer()
+        {
+            Application.Exit();
         }
         private bool RegisterOnMaster()
         {
@@ -232,14 +246,15 @@ namespace SlaveServer
             if (Convert.ToInt32(response[0])>0)
             {
                 SLAVE_SERVER_ID = Convert.ToInt32(response[0]);
-                this.serverIDBox.Text = response[0];
+                //this.Invoke(this.idDelegate, SLAVE_SERVER_ID);
                 IServer sserver = (IServer)Activator.GetObject(
                     typeof(IServer),
                     response[1]);
                 int[] range = sserver.Split();
                 master.SplitRange(SLAVE_SERVER_ID, response[1]);
                 sss.SetPadIntRange(range[0], range[1]);
-                ChangeInterval(range[0], range[1]);
+
+                //this.Invoke(this.interDelegate, range);
 
                 sss.SetNextServer(sserver.EnterRing(SLAVE_SERVER_LOCAL));
                 master.RegisterNext(SLAVE_SERVER_ID, sss.GetNextServer());
@@ -257,6 +272,5 @@ namespace SlaveServer
             CloseChannel();
             return false;
         }
-
     }
 }

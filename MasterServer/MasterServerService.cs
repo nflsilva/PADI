@@ -15,6 +15,7 @@ namespace MasterServer
     public class MasterServerService : MarshalByRefObject, IMasterServer
     {
         private static int PING_DELAY = 2000;//ms
+        private static int WRITE_LOCK_TIMEOUT = 10000; //ms
 
         private Dictionary<int, PadInt> padiInts;               //this will hold the PadiIntObjects
         private Dictionary<int, string> servers;                //this will hold the servers locals;
@@ -35,6 +36,7 @@ namespace MasterServer
         private bool isWriting;     //flags for padiInts locks
         private bool isReading;
         private bool isAccessingTxNumber;
+        private Object accessTxNumberObject; //HACK: so its possible to lock the integer;
 
         private bool isRunning;     //state flag
         private bool fail;          //state flag for fail
@@ -55,7 +57,7 @@ namespace MasterServer
         {
             ui = nui;
             minUID = 0;
-            maxUID = Int32.MaxValue;
+            maxUID = 1000;
             txNumber = 0;
             nextAvailableServer = 0;
             nextAvailableID = 1;
@@ -74,7 +76,7 @@ namespace MasterServer
             pairs = new Dictionary<int, string>();
             ranges = new Dictionary<int, Tuple<int, int>>();
             replicas = new Dictionary<int, PadInt>();
-
+            accessTxNumberObject = new Object();
             ranges.Add(0, new Tuple<int, int>(minUID, maxUID));
 
             servers.Add(0, "tcp://localhost:2000/Server");
@@ -201,7 +203,6 @@ namespace MasterServer
             ui.Invoke(ui.cDelegate, "JOINED> " + myID + " [" + ranges[myID].Item1 + "-" + ranges[myID].Item2 + "]");
             return resp;
         }
-
         string IMasterServer.GetServerLocalForPadInt(int uid)
         {
             foreach (KeyValuePair<int, Tuple<int, int>> entry in ranges)
@@ -213,7 +214,6 @@ namespace MasterServer
             }
             return "NOT FOUND - SHOULD NEVER HAPPEN :O";
         }
-
         public void RecoverRing() {
             IMasterServer m = (IMasterServer)Activator.GetObject(
                typeof(IMasterServer),
@@ -243,7 +243,6 @@ namespace MasterServer
             ui.Invoke(ui.cDelegate, "Server " + nextServerLocal + " doesn't responde. New next is: " + nextServerLocal);
         
         }
-
         public void PingNext()
         {
             while (!stopPingThread)
@@ -266,13 +265,13 @@ namespace MasterServer
                     }
                     catch (SocketException)
                     {
+                        nextServer.Fail();
                         RecoverRing();
                     }
                     Thread.Sleep(PING_DELAY);
                 }
             }
         }
-
         string IServer.EnterRing(string local)
         {
             string response = nextServerLocal;
@@ -318,7 +317,6 @@ namespace MasterServer
             nextServerLocal = local;
             pingRunning = true;
         }
-
         int[] IServer.Split()
         {
             int[] resp = new int[2];
@@ -336,18 +334,11 @@ namespace MasterServer
 
         private void CheckState()
         {
-            if (fail)
-            {
-                Environment.Exit(-1); //Dont know what to call here
-            }
-            else
-            {
-                while (!isRunning) ;
-            }
+            while (!isRunning) ;
         }
         private void GetWriteLock()
         {
-            if (!Monitor.TryEnter(padiInts, 8000))
+            if (!Monitor.TryEnter(padiInts, WRITE_LOCK_TIMEOUT))
             {
                 ui.Invoke(ui.cDelegate, "ReasingWriteLock");
                 isWriting = false;
@@ -373,7 +364,7 @@ namespace MasterServer
         }
         private void FreeWriteLock()
         {
-            if (!Monitor.TryEnter(padiInts, 8000))
+            if (!Monitor.TryEnter(padiInts, WRITE_LOCK_TIMEOUT))
             {
                 ui.Invoke(ui.cDelegate, "ReasingWriteLock");
                 isWriting = false;
@@ -613,9 +604,40 @@ namespace MasterServer
         {
             CheckState();
 
-            transactions.Add(txNumber, new List<PadInt>());
-            participants.Add(txNumber, new List<string>());
-            return txNumber++;
+
+            int retNumber = -1;
+
+            Monitor.Enter(accessTxNumberObject);
+
+            if (isAccessingTxNumber)
+            {
+                try
+                {
+                    Monitor.Wait(accessTxNumberObject);
+                }
+                catch (SynchronizationLockException)
+                {
+                    ui.Invoke(ui.cDelegate, "SycExcception");
+                }
+                catch (ThreadInterruptedException)
+                {
+                    ui.Invoke(ui.cDelegate, "IntExcception");
+                }
+            }
+            isAccessingTxNumber = true;
+
+            retNumber = txNumber++;
+
+
+            isAccessingTxNumber = false;
+            Monitor.PulseAll(accessTxNumberObject);
+            Monitor.Exit(accessTxNumberObject);
+
+            ui.Invoke(ui.cDelegate, "Init TX: " + retNumber);
+            transactions.Add(retNumber, new List<PadInt>());
+            participants.Add(retNumber, new List<string>());
+
+            return retNumber;
         }
 
         bool IServer.TryTxCommit(int txNumber)
@@ -847,7 +869,7 @@ namespace MasterServer
         bool IServer.Fail()
         {
             CheckState();
-            fail = true;
+            ui.Invoke(ui.cDelegate, "I'm Master, I never fail!");
             return true;
         }
         bool IServer.Ping(int nid)
@@ -864,7 +886,7 @@ namespace MasterServer
         bool IServer.Recover()
         {
             isRunning = true;
-            fail = false;
+
             return true;
         }
         #endregion
@@ -878,9 +900,13 @@ namespace MasterServer
         int IMasterServer.GetTxNumber()
         {
             CheckState();
-            return txNumber++;
-        }
+            int retTxNumber = txNumber++;
 
+
+
+
+            return retTxNumber;
+        }
         string IMasterServer.GetAvailableServer()
         {
             CheckState();
@@ -888,7 +914,6 @@ namespace MasterServer
             nextAvailableServer++;
             return reps;
         }
-
         string[] IMasterServer.Register(string slocal)
         {
             CheckState();
@@ -920,7 +945,6 @@ namespace MasterServer
             ui.Invoke(ui.cDelegate, "Removed server id: " + sid.ToString());
             return true;
         }
-
         string IMasterServer.AddDeadServer(string deadLocal, string local)
         {
             CheckState();
@@ -945,7 +969,6 @@ namespace MasterServer
             }
             return -1;
         }
-
         bool IMasterServer.RegisterNext(int sid, string nextLocal)
         {
             CheckState();

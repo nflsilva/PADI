@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,8 +15,9 @@ namespace PADI_DSTM
     public static class PadiDstm
     {
 
-        private static int APP_DEFAULT_PORT = 9000;
+        private static int APP_DEFAULT_PORT = 9000; //ms
         private static int MASTER_DEFAULT_PORT = 2000;
+        private static int CONNECTION_TIME_OUT = 10000;
         private static string INTRO_MSG = "Hello, welcome to PADI-DSTM!";
         private static string MASTER_SERVER_LOCAL = "tcp://localhost:2000/Server";
 
@@ -24,6 +26,7 @@ namespace PADI_DSTM
         private static Dictionary<int, PadInt> cache;
         private static Dictionary<int, bool> dirty;
         private static int txNumber;
+
 
 
         public static PadInt CreatePadInt(int uid)
@@ -35,6 +38,11 @@ namespace PADI_DSTM
             }
             catch (RemotingException)
             {
+                ConnectToSystem();
+                CreatePadInt(uid);
+
+            }catch (SocketException){
+
                 ConnectToSystem();
                 CreatePadInt(uid);
             }
@@ -90,6 +98,11 @@ namespace PADI_DSTM
                     ConnectToSystem();
                     AccessPadInt(uid);
                 }
+                catch (SocketException)
+                {
+                    ConnectToSystem();
+                    AccessPadInt(uid);
+                }
             }
 
             if (pint != null)
@@ -123,6 +136,7 @@ namespace PADI_DSTM
             OpenChannel(APP_DEFAULT_PORT + rand.Next(1, 100));
             return true;
         }
+
         public static bool TxBegin()
         {
 
@@ -131,6 +145,11 @@ namespace PADI_DSTM
                 txNumber = server.TxBegin();
             }
             catch (RemotingException)
+            {
+                ConnectToSystem();
+                TxBegin();
+            }
+            catch (SocketException)
             {
                 ConnectToSystem();
                 TxBegin();
@@ -153,8 +172,11 @@ namespace PADI_DSTM
             }
             catch (RemotingException)
             {
-                ConnectToSystem();
-                TxCommit();
+                throw new TxException("Coudn't abort Transaction, server must be down. Transaction was LOST");
+            }
+            catch (SocketException)
+            {
+                throw new TxException("Coudn't abort Transaction, server didnt respond. Transaction was LOST.");
             }
 
             dirty.Clear();
@@ -163,6 +185,7 @@ namespace PADI_DSTM
 
 
         }
+
         public static bool TxAbort()
         {
 
@@ -173,8 +196,11 @@ namespace PADI_DSTM
             }
             catch (RemotingException)
             {
-                ConnectToSystem();
-                TxAbort();
+                throw new TxException("Coudn't abort Transaction, server must be down. Transaction was LOST.");
+            }
+            catch (SocketException)
+            {
+                throw new TxException("Coudn't abort Transaction, server didnt respond. Transaction was LOST.");
             }
 
             dirty.Clear();
@@ -188,6 +214,7 @@ namespace PADI_DSTM
             IServer s = (IServer)Activator.GetObject(
                 typeof(IServer),
                 MASTER_SERVER_LOCAL);
+
             return s.Status();
         }
 
@@ -215,17 +242,21 @@ namespace PADI_DSTM
             return s.Recover();
         }
 
-
         private static bool OpenChannel(int port)
         {
 
-            channel = new TcpChannel(port);
+            IDictionary props = new Hashtable();
+            props["port"] = port;
+            props["timeout"] = CONNECTION_TIME_OUT;
+            channel = new TcpChannel(props, null, null);
             ChannelServices.RegisterChannel(channel, false);
+
             ConnectToSystem();
 
             return true;
 
         }
+
         private static bool CloseChannel()
         {
             ChannelServices.UnregisterChannel(channel);
