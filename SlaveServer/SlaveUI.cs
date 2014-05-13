@@ -31,6 +31,8 @@ namespace SlaveServer
         private static string SLAVE_ON_MASTER_WARNING = "Slave and master cannot be on the same port!";
         private static Regex PORT_REGEX = new Regex("[0-9]+");
         private static Regex ID_REGEX = new Regex("[0-9]+");
+
+        private static int TCP_PORT_TIMEOUT = 5000;
       
         private static TcpChannel channel;
         private SlaveServerService sss;
@@ -194,7 +196,7 @@ namespace SlaveServer
             {
                 IDictionary props = new Hashtable();
                 props["port"] = port;
-                props["timeout"] = 4000;
+                props["timeout"] = TCP_PORT_TIMEOUT;
                 channel = new TcpChannel(props, null, null);
                 ChannelServices.RegisterChannel(channel, false);
             }
@@ -219,6 +221,7 @@ namespace SlaveServer
         private bool CloseChannel()
         {
             master.Unregister(SLAVE_SERVER_ID);
+            RemotingServices.Disconnect(sss);
             ChannelServices.UnregisterChannel(channel);
             RegisterOnMaster();
             sss.StartThread();
@@ -226,6 +229,8 @@ namespace SlaveServer
         }
         public void ResetServer()
         {
+            RemotingServices.Disconnect(sss);
+            ChannelServices.UnregisterChannel(channel);
             Application.Exit();
         }
         private bool RegisterOnMaster()

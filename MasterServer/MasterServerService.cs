@@ -15,7 +15,7 @@ namespace MasterServer
     public class MasterServerService : MarshalByRefObject, IMasterServer
     {
         private static int PING_DELAY = 2000;//ms
-        private static int WRITE_LOCK_TIMEOUT = 10000; //ms
+        private static int WRITE_LOCK_TIMEOUT = 1000; //ms
 
         private Dictionary<int, PadInt> padiInts;               //this will hold the PadiIntObjects
         private Dictionary<int, string> servers;                //this will hold the servers locals;
@@ -57,7 +57,7 @@ namespace MasterServer
         {
             ui = nui;
             minUID = 0;
-            maxUID = 1000;
+            maxUID = Int32.MaxValue;
             txNumber = 0;
             nextAvailableServer = 0;
             nextAvailableID = 1;
@@ -265,7 +265,15 @@ namespace MasterServer
                     }
                     catch (SocketException)
                     {
-                        nextServer.Fail();
+                        try
+                        {
+                            nextServer.Fail();
+                        }
+                        catch (SocketException)
+                        {
+                            //DIRTY and UGLY HACK. GOD: "Oh me, what are you doing?!" - silence the exception
+                        }
+
                         RecoverRing();
                     }
                     Thread.Sleep(PING_DELAY);
@@ -541,10 +549,6 @@ namespace MasterServer
             bool belogsHere = uid >= minUID && uid <= maxUID;
             if (belogsHere)
             {
-                if (transactions[txNumber].Contains(padiInt))
-                {
-                    transactions[txNumber].Remove(padiInt);
-                }
                 transactions[txNumber].Add(padiInt);
                 ui.Invoke(ui.cDelegate, "Try> Write PadiInt id: " + uid.ToString() + "with value: " + padiInt.Read());
                 return true;
@@ -746,12 +750,14 @@ namespace MasterServer
                 }
             }
             //Check timestamp logic
+            //FreeReadLock();
             return canCommit;
         }
 
         private bool CommitTx(int txNumber)
         {
             PadInt npint;
+            //GetWriteLock();
             foreach (PadInt pint in transactions[txNumber])
             {
                 if (padiInts.ContainsKey(pint.GetUid()))
@@ -770,9 +776,9 @@ namespace MasterServer
                 ui.Invoke(ui.intDelegate, new List<PadInt>(padiInts.Values));
                 ui.Invoke(ui.repDelegate, new List<PadInt>(replicas.Values));
             }
-            FreeWriteLock();
             transactions.Remove(txNumber);
             participants.Remove(txNumber);
+            FreeWriteLock();
             ui.Invoke(ui.cDelegate, "TxCommit> Tx id: " + txNumber + " has been commited!");
             return true;
         }

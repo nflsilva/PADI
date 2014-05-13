@@ -392,10 +392,7 @@ namespace SlaveServer
             bool belogsHere = uid >= minUID && uid <= maxUID;
             if (belogsHere)
             {
-                if (transactions[txNumber].Contains(padiInt))
-                {
-                    transactions[txNumber].Remove(padiInt);
-                }
+
                 transactions[txNumber].Add(padiInt);
                 ui.Invoke(ui.cDelegate, "Try> Write PadiInt id: " + uid.ToString() + "with value: " + padiInt.Read());
                 return true;
@@ -457,7 +454,7 @@ namespace SlaveServer
         private bool CanCommitMyself(int txNumber)
         {
             CheckState();
-            GetWriteLock();
+            GetReadLock();
             bool canCommit = true;
             foreach (PadInt pint in transactions[txNumber])
             {
@@ -468,7 +465,7 @@ namespace SlaveServer
                     break;
                 }
             }
-            //Check timestamp logic
+            FreeReadLock();
             return canCommit;
         }
         bool IServer.TryTxCommit(int txNumber)
@@ -543,6 +540,7 @@ namespace SlaveServer
         private bool CommitTx(int txNumber)
         {
             PadInt npint;
+            GetWriteLock();
             foreach (PadInt pint in transactions[txNumber])
             {
                 if (padiInts.ContainsKey(pint.GetUid()))
@@ -562,9 +560,10 @@ namespace SlaveServer
                 ui.Invoke(ui.repDelegate, new List<PadInt>(replicas.Values));
 
             }
-            FreeWriteLock();
+
             transactions.Remove(txNumber);
             participants.Remove(txNumber);
+            FreeWriteLock();
             ui.Invoke(ui.cDelegate, "TxCommit> Tx id: " + txNumber + " has been commited!");
             return true;
         }
@@ -652,7 +651,6 @@ namespace SlaveServer
             fail = true;
             stopPingThread = true;
             ui.Invoke(ui.cDelegate, "Im dead");
-            Thread.Sleep(2000);
             return true;
         }
         bool IServer.Freeze()
@@ -685,7 +683,7 @@ namespace SlaveServer
             if (fail) {
                 if (ui != null)
                 {
-                    ui.ResetServer();
+                    ui.Invoke(ui.resetDelegate);
                 }
                 Environment.Exit(0);
             }

@@ -25,6 +25,8 @@ namespace MasterServer
         private static Regex MASTER_PORT_REGEX = new Regex("[0-9]+");
         private static int MASTER_DEFAULT_PORT = 2000;
 
+        private static int TCP_PORT_TIMEOUT = 5000;
+
 
         private bool isRunning;
         private static TcpChannel channel;
@@ -146,7 +148,7 @@ namespace MasterServer
         {
             IDictionary props = new Hashtable();
             props["port"] = port;
-            props["timeout"] = 4000;
+            props["timeout"] = TCP_PORT_TIMEOUT;
             channel = new TcpChannel(props, null, null);
             ChannelServices.RegisterChannel(channel, false);
             mss = new MasterServerService(this);
