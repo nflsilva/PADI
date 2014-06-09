@@ -10,9 +10,8 @@ How to run:
 3. Start transations. Create, Access and write PadInts into the system.
 4. Commit transactions.
 
-Bugs/Hacks that need revision:
-1. When a server fails, something the resulting slaves PadInt interval becomes buggy, need to fix that
-2. Add TimeOuts on Access, Create, 2PC, etc, so the ring doesn't stop when a given server is froozen or down
-3. Add Lock to TxBegin on master 
-4. Add TxExceptions to PadiDstm and fix the "ghost" server bug
+Note:
+It's possible to run any application as a client of this system. To do so,nit's necessary to link your custom application with PADI-DSTM library and the Shared library.
+To do this, first add the references for these two librarys on your solution.
+Secondly, add the "using PADI-DSTM" and "using Shared" on the top of your code.
 
